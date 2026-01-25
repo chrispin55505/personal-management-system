@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Management Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Login Screen -->
+    <div class="login-container" id="loginContainer">
+        <div class="login-box">
+            <h1>Personal Dashboard</h1>
+            <p>Login to access your personal management system</p>
+            <form class="login-form" id="loginForm">
+                <input type="text" id="username" placeholder="Username" required>
+                <input type="password" id="password" placeholder="Password" required>
+                <button type="submit" class="login-btn">Login</button>
+            </form>
+            <p style="margin-top: 20px; font-size: 14px;">Default: chrispin / @nzali2006</p>
+        </div>
+    </div>
+
+    <!-- Dashboard -->
+    <div class="dashboard-container" id="dashboardContainer">
+        <header>
+            <div class="logo">Personal<span>Dashboard</span></div>
+            <div class="user-info">
+                <span id="currentUser">Admin User</span>
+                <button class="logout-btn" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</button>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <div class="sidebar">
+                <ul class="nav-menu">
+                    <li><a href="#" class="active" data-section="dashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                    <li><a href="#" data-section="timetable"><i class="fas fa-calendar-alt"></i> Exam Timetable</a></li>
+                    <li><a href="#" data-section="ca-marks"><i class="fas fa-chart-line"></i> CA Marks</a></li>
+                    <li><a href="#" data-section="money-circle"><i class="fas fa-money-bill-wave"></i> Money Circle</a></li>
+                    <li><a href="#" data-section="modules"><i class="fas fa-book"></i> Modules</a></li>
+                    <li><a href="#" data-section="appointments"><i class="fas fa-clock"></i> Appointments</a></li>
+                    <li><a href="#" data-section="skills"><i class="fas fa-code"></i> Skills Record</a></li>
+                    <li><a href="#" data-section="journeys"><i class="fas fa-route"></i> Journey Tracker</a></li>
+                </ul>
+            </div>
+
+            <div class="content-area">
+                <!-- Dashboard Section -->
+                <div class="section active" id="dashboard">
+                    <div class="section-header">
+                        <h2 class="section-title">Dashboard Overview</h2>
+                    </div>
+                    
+                    <div class="stats-cards">
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-calendar-check"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="appointmentCount">0</h3>
+                                <p>Upcoming Appointments</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-hand-holding-usd"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="moneyOwed">0</h3>
+                                <p>TZS Owed to You</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-book"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="moduleCount">0</h3>
+                                <p>Registered Modules</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-road"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="journeyCount">0</h3>
+                                <p>Upcoming Journeys</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="section-header">
+                        <h3 class="section-title">Recent Activities</h3>
+                    </div>
+                    
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Activity</th>
+                                    <th>Type</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recentActivities">
+                                <!-- Activities will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Exam Timetable Section -->
+                <div class="section" id="timetable">
+                    <div class="section-header">
+                        <h2 class="section-title">University Exam Timetable</h2>
+                        <button class="add-btn" id="addTimetableBtn"><i class="fas fa-plus"></i> Add Exam</button>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="moduleCode">Module Code</label>
+                            <input type="text" id="moduleCode" class="form-control" placeholder="Enter module code">
+                        </div>
+                        <div class="form-group">
+                            <label for="moduleName">Module Name</label>
+                            <input type="text" id="moduleName" class="form-control" placeholder="Enter module name">
+                        </div>
+                        <div class="form-group">
+                            <label for="examDate">Date</label>
+                            <input type="date" id="examDate" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="examTime">Time</label>
+                            <input type="time" id="examTime" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="examVenue">Venue</label>
+                            <input type="text" id="examVenue" class="form-control" placeholder="Enter venue">
+                        </div>
+                    </div>
+                    
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Module Code</th>
+                                    <th>Module Name</th>
+                                    <th>Date</th>
+                                    <th>Time</th>
+                                    <th>Venue</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="timetableBody">
+                                <!-- Timetable data will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- CA Marks Section -->
+                <div class="section" id="ca-marks">
+                    <div class="section-header">
+                        <h2 class="section-title">CA Marks Recording</h2>
+                        <button class="add-btn" id="addMarksBtn"><i class="fas fa-plus"></i> Add Marks</button>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="moduleSelect">Module</label>
+                            <select id="moduleSelect" class="form-control">
+                                <option value="">Select Module</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="categorySelect">Category</label>
+                            <select id="categorySelect" class="form-control">
+                                <option value="group-assignment">Group Assignment</option>
+                                <option value="individual-assignment">Individual Assignment</option>
+                                <option value="test01">Test 01</option>
+                                <option value="test02">Test 02</option>
+                                <option value="presentation">Presentation</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="marksInput">Marks</label>
+                            <input type="number" id="marksInput" class="form-control" placeholder="Enter marks">
+                        </div>
+                    </div>
+                    
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Module</th>
+                                    <th>Lecturer</th>
+                                    <th>Category</th>
+                                    <th>Marks</th>
+                                    <th>Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="marksBody">
+                                <!-- Marks data will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Money Circle Section -->
+                <div class="section" id="money-circle">
+                    <div class="section-header">
+                        <h2 class="section-title">Money Circle Management</h2>
+                        <button class="add-btn" id="addMoneyBtn"><i class="fas fa-plus"></i> Add Record</button>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="personName">Person Name</label>
+                            <input type="text" id="personName" class="form-control" placeholder="Enter name">
+                        </div>
+                        <div class="form-group">
+                            <label for="amount">Amount (TZS)</label>
+                            <input type="number" id="amount" class="form-control" placeholder="Enter amount">
+                        </div>
+                        <div class="form-group">
+                            <label for="borrowDate">Date Borrowed</label>
+                            <input type="date" id="borrowDate" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="returnDate">Expected Return</label>
+                            <input type="date" id="returnDate" class="form-control">
+                        </div>
+                    </div>
+                    
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Person</th>
+                                    <th>Amount</th>
+                                    <th>Date Borrowed</th>
+                                    <th>Expected Return</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="moneyBody">
+                                <!-- Money data will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="section-header" style="margin-top: 40px;">
+                        <h3 class="section-title">Weekly NMB Savings</h3>
+                        <button class="add-btn" id="addSavingsBtn"><i class="fas fa-plus"></i> Add Savings</button>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="savingsAmount">Amount (TZS)</label>
+                            <input type="number" id="savingsAmount" class="form-control" placeholder="Enter amount">
+                        </div>
+                        <div class="form-group">
+                            <label for="savingsDate">Date</label>
+                            <input type="date" id="savingsDate" class="form-control">
+                        </div>
+                    </div>
+                    
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Amount</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="savingsBody">
+                                <!-- Savings data will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Modules Section -->
+                <div class="section" id="modules">
+                    <div class="section-header">
+                        <h2 class="section-title">Module Registration</h2>
+                        <button class="add-btn" id="addModuleBtn"><i class="fas fa-plus"></i> Add Module</button>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="moduleCodeInput">Module Code</label>
+                            <input type="text" id="moduleCodeInput" class="form-control" placeholder="Enter module code">
+                        </div>
+                        <div class="form-group">
+                            <label for="moduleNameInput">Module Name</label>
+                            <input type="text" id="moduleNameInput" class="form-control" placeholder="Enter module name">
+                        </div>
+                        <div class="form-group">
+                            <label for="lecturerName">Lecturer Name</label>
+                            <input type="text" id="lecturerName" class="form-control" placeholder="Enter lecturer name">
+                        </div>
+                        <div class="form-group">
+                            <label for="semester">Semester</label>
+                            <select id="semester" class="form-control">
+                                <option value="1">Semester 1</option>
+                                <option value="2">Semester 2</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="year">Year</label>
+                            <select id="year" class="form-control">
+                                <option value="1">Year 1</option>
+                                <option value="2">Year 2</option>
+                                <option value="3">Year 3</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Module Code</th>
+                                    <th>Module Name</th>
+                                    <th>Lecturer</th>
+                                    <th>Semester</th>
+                                    <th>Year</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="modulesBody">
+                                <!-- Modules data will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Appointments Section -->
+                <div class="section" id="appointments">
+                    <div class="section-header">
+                        <h2 class="section-title">Appointment Management</h2>
+                        <button class="add-btn" id="addAppointmentBtn"><i class="fas fa-plus"></i> Add Appointment</button>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="appointmentName">Appointment Name</label>
+                            <input type="text" id="appointmentName" class="form-control" placeholder="Enter appointment name">
+                        </div>
+                        <div class="form-group">
+                            <label for="appointmentPlace">Place</label>
+                            <input type="text" id="appointmentPlace" class="form-control" placeholder="Enter place">
+                        </div>
+                        <div class="form-group">
+                            <label for="appointmentDate">Date</label>
+                            <input type="date" id="appointmentDate" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="appointmentTime">Time</label>
+                            <input type="time" id="appointmentTime" class="form-control">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="appointmentAim">Aim of Appointment</label>
+                            <textarea id="appointmentAim" class="form-control" rows="3" placeholder="Enter aim of appointment"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="notificationType">Notification</label>
+                            <select id="notificationType" class="form-control">
+                                <option value="2hours">2 hours before</option>
+                                <option value="1day">1 day before</option>
+                                <option value="30min">30 minutes before</option>
+                                <option value="none">No notification</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Place</th>
+                                    <th>Date & Time</th>
+                                    <th>Aim</th>
+                                    <th>Notification</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="appointmentsBody">
+                                <!-- Appointments data will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Skills Section -->
+                <div class="section" id="skills">
+                    <div class="section-header">
+                        <h2 class="section-title">Skills Analysis & Record</h2>
+                    </div>
+                    
+                    <div class="skill-bars">
+                        <!-- Skill bars will be generated here -->
+                    </div>
+                </div>
+
+                <!-- Journeys Section -->
+                <div class="section" id="journeys">
+                    <div class="section-header">
+                        <h2 class="section-title">Journey Information & Analysis</h2>
+                        <button class="add-btn" id="addJourneyBtn"><i class="fas fa-plus"></i> Add Journey</button>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="journeyFrom">From</label>
+                            <input type="text" id="journeyFrom" class="form-control" placeholder="Starting point">
+                        </div>
+                        <div class="form-group">
+                            <label for="journeyTo">To</label>
+                            <input type="text" id="journeyTo" class="form-control" placeholder="Destination">
+                        </div>
+                        <div class="form-group">
+                            <label for="journeyDate">Date</label>
+                            <input type="date" id="journeyDate" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="journeyTime">Time</label>
+                            <input type="time" id="journeyTime" class="form-control">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="transportCost">Transport Cost (TZS)</label>
+                            <input type="number" id="transportCost" class="form-control" placeholder="Enter cost">
+                        </div>
+                        <div class="form-group">
+                            <label for="foodCost">Food & Drink Cost (TZS)</label>
+                            <input type="number" id="foodCost" class="form-control" placeholder="Enter cost">
+                        </div>
+                        <div class="form-group">
+                            <label for="journeyStatus">Status</label>
+                            <select id="journeyStatus" class="form-control">
+                                <option value="pending">Pending</option>
+                                <option value="completed">Completed</option>
+                                <option value="cancelled">Cancelled</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>From - To</th>
+                                    <th>Date & Time</th>
+                                    <th>Transport Cost</th>
+                                    <th>Food Cost</th>
+                                    <th>Total Cost</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="journeysBody">
+                                <!-- Journeys data will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>Personal Management Dashboard &copy; 2023 | Designed for Diploma in IT, Tanzania</p>
+        </footer>
+    </div>
+
+    <!-- Notification -->
+    <div class="notification" id="notification">
+        <div class="notification-icon">
+            <i class="fas fa-bell"></i>
+        </div>
+        <div class="notification-content">
+            <h4 id="notificationTitle">Notification Title</h4>
+            <p id="notificationMessage">Notification message goes here.</p>
+        </div>
+        <button class="close-notification" id="closeNotification">&times;</button>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>

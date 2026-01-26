@@ -1,0 +1,27 @@
+{
+  "name": "personal-management-system",
+  "version": "1.0.0",
+  "description": "A comprehensive personal management system built with Node.js, Express, MySQL, and vanilla JavaScript",
+  "main": "personal_management_backend/server.js",
+  "scripts": {
+    "start": "cd personal_management_backend && npm start",
+    "dev": "cd personal_management_backend && npm run dev",
+    "install-deps": "cd personal_management_backend && npm install",
+    "git-push": "powershell -ExecutionPolicy Bypass -File auto-git-push.ps1",
+    "git-push-bat": "auto-git-push.bat"
+  },
+  "keywords": [
+    "personal-management",
+    "student-dashboard",
+    "nodejs",
+    "express",
+    "mysql",
+    "javascript"
+  ],
+  "author": "chrispin55505",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/chrispin55505/personal-management-system.git"
+  }
+}

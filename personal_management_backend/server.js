@@ -4,8 +4,7 @@ const session = require('express-session');
 const path = require('path');
 const cors = require('cors');
 const helmet = require('helmet');
-const morgan = require('morgan');
-const { testConnection } = require('./config/database');
+const { testConnection } = require('./config/database-simple');
 
 const app = express();
 const port = process.env.PORT || 6000;
@@ -15,13 +14,6 @@ app.use(helmet({
   contentSecurityPolicy: false,
   crossOriginEmbedderPolicy: false
 }));
-
-// Logging middleware
-if (process.env.NODE_ENV === 'production') {
-  app.use(morgan('combined'));
-} else {
-  app.use(morgan('dev'));
-}
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -40,25 +32,19 @@ app.use(session({
 // Test database connection
 testConnection();
 
-// CORS middleware
+// CORS middleware - simplified for Railway
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' ? 
-    [process.env.RAILWAY_PUBLIC_DOMAIN || 'https://your-railway-app.railway.app'] : 
-    ['http://localhost:6000', 'http://localhost:3000'],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization']
+  origin: true,
+  credentials: true
 }));
 
-// View Engine
-app.set('view engine', 'hbs');
-app.set('views', path.join(__dirname, 'views'));
+// View Engine removed - not needed for API
 
 // Static folder - serve frontend files
 app.use(express.static(path.join(__dirname, '../personal_management_frontend')));
 
-// API Routes
-app.use('/api', require('./routes/api'));
+// API Routes - simplified for Railway
+app.use('/api', require('./routes/api-simple'));
 
 // Health check endpoint for Railway
 app.get('/health', (req, res) => {

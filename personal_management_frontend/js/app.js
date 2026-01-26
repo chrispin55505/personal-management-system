@@ -8,13 +8,8 @@ class PersonalManagementApp {
     }
 
     getApiBase() {
-        // Check if we're in production (Railway.app) or development
-        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-            return `http://localhost:${window.location.port || 6000}/api`;
-        } else {
-            // Production - use the same domain
-            return '/api';
-        }
+        // Simplified API base URL for Railway
+        return '/api';
     }
 
     async init() {

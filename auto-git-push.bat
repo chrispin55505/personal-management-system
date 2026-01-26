@@ -12,6 +12,10 @@ if not exist ".git" (
     git remote add origin https://github.com/chrispin55505/personal-management-system.git
 )
 
+REM Get current branch name
+for /f "tokens=*" %%i in ('git rev-parse --abbrev-ref HEAD') do set currentBranch=%%i
+echo Current branch: %currentBranch%
+
 REM Add all changes
 echo Adding all changes...
 git add .
@@ -29,7 +33,7 @@ if %errorlevel% equ 0 (
     
     REM Push to remote repository
     echo Pushing to remote repository...
-    git push -u origin main
+    git push -u origin %currentBranch%
     
     echo Successfully committed and pushed changes!
 ) else (

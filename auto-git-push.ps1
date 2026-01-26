@@ -16,6 +16,10 @@ if (-not (Test-Path ".git")) {
     git remote add origin https://github.com/chrispin55505/personal-management-system.git
 }
 
+# Get current branch name
+$currentBranch = git rev-parse --abbrev-ref HEAD
+Write-Host "Current branch: $currentBranch" -ForegroundColor Blue
+
 # Add all changes
 Write-Host "Adding all changes..." -ForegroundColor Blue
 git add .
@@ -32,7 +36,7 @@ if ($changes) {
     
     # Push to remote repository
     Write-Host "Pushing to remote repository..." -ForegroundColor Blue
-    git push -u origin main
+    git push -u origin $currentBranch
     
     Write-Host "Successfully committed and pushed changes!" -ForegroundColor Green
 } else {

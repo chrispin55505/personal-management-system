@@ -11,10 +11,14 @@ async function initializeDatabase() {
             user: process.env.RAILWAY_MYSQL_USER || process.env.DB_USER || 'root',
             password: process.env.RAILWAY_MYSQL_PASSWORD || process.env.DB_PASSWORD || '',
             port: process.env.RAILWAY_MYSQL_PORT || 3306,
-            ssl: process.env.RAILWAY_ENVIRONMENT ? { rejectUnauthorized: false } : false
+            ssl: process.env.RAILWAY_ENVIRONMENT ? { rejectUnauthorized: false } : false,
+            connectTimeout: 10000,
+            acquireTimeout: 10000
         });
 
         console.log('🔧 Initializing database...');
+        console.log('🔗 Host:', process.env.RAILWAY_PRIVATE_HOST || process.env.DB_HOST);
+        console.log('👤 User:', process.env.RAILWAY_MYSQL_USER || process.env.DB_USER);
 
         // Create database if not exists
         await pool.execute('CREATE DATABASE IF NOT EXISTS personal_management');
@@ -123,6 +127,7 @@ async function initializeDatabase() {
 
     } catch (error) {
         console.error('❌ Database initialization failed:', error.message);
+        console.log('🔧 Running in mock mode (without database)');
         return false;
     } finally {
         if (pool) {

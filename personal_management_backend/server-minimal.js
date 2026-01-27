@@ -3,6 +3,7 @@ const express = require('express');
 const session = require('express-session');
 const path = require('path');
 const mysql = require('mysql2/promise');
+const { initializeDatabase } = require('./database/init-database');
 
 const app = express();
 const port = process.env.PORT || 6000;
@@ -27,11 +28,15 @@ app.use(session({
 let pool;
 async function initDatabase() {
     try {
+        // First, initialize the database structure
+        const dbInitialized = await initializeDatabase();
+        
+        // Then create the connection pool
         pool = mysql.createPool({
             host: process.env.RAILWAY_PRIVATE_HOST || process.env.DB_HOST || 'localhost',
             user: process.env.RAILWAY_MYSQL_USER || process.env.DB_USER || 'root',
             password: process.env.RAILWAY_MYSQL_PASSWORD || process.env.DB_PASSWORD || '',
-            database: process.env.RAILWAY_MYSQL_DATABASE_NAME || process.env.DB_NAME || 'personal_management',
+            database: 'personal_management', // Always use this database
             port: process.env.RAILWAY_MYSQL_PORT || 3306,
             waitForConnections: true,
             connectionLimit: 10,

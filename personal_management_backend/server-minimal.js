@@ -113,17 +113,17 @@ app.get('/api/dashboard/stats', (req, res) => {
     });
 });
 
-// Basic CRUD endpoints (working with or without database)
+// Basic CRUD endpoints (matching schema.sql structure)
 app.get('/api/modules', async (req, res) => {
     if (!pool) {
         return res.json([
-            { id: 1, code: 'IT101', name: 'Web Development', lecturer: 'Dr. Smith', semester: 1, year: 2 },
-            { id: 2, code: 'IT102', name: 'Database Systems', lecturer: 'Prof. Johnson', semester: 1, year: 2 }
+            { id: 1, code: 'IT101', name: 'Introduction to IT', lecturer: 'Dr. James', semester: 1, year: 1 },
+            { id: 2, code: 'CS201', name: 'Data Structures', lecturer: 'Prof. Sarah', semester: 2, year: 2 }
         ]);
     }
     
     try {
-        const [rows] = await pool.execute('SELECT * FROM modules ORDER BY module_code');
+        const [rows] = await pool.execute('SELECT * FROM modules ORDER BY code');
         res.json(rows);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -137,12 +137,14 @@ app.post('/api/modules', async (req, res) => {
     
     try {
         const { code, name, lecturer, semester, year } = req.body;
+        const userId = 1; // Default user for now
         const [result] = await pool.execute(
-            'INSERT INTO modules (module_code, module_name, lecturer, semester, year) VALUES (?, ?, ?, ?, ?)',
-            [code, name, lecturer, semester, year]
+            'INSERT INTO modules (code, name, lecturer, semester, year, user_id) VALUES (?, ?, ?, ?, ?, ?)',
+            [code, name, lecturer, semester, year, userId]
         );
         res.json({ id: result.insertId, success: true });
     } catch (error) {
+        console.error('Module insert error:', error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -160,11 +162,11 @@ app.delete('/api/modules/:id', async (req, res) => {
     }
 });
 
-// Similar pattern for other endpoints...
+// Timetable endpoints
 app.get('/api/timetable', async (req, res) => {
     if (!pool) {
         return res.json([
-            { id: 1, moduleCode: 'IT101', moduleName: 'Web Development', date: '2024-02-15', time: '09:00', venue: 'Room 101' }
+            { id: 1, moduleCode: 'IT101', moduleName: 'Introduction to IT', examDate: '2024-02-15', examTime: '09:00', venue: 'Room 101' }
         ]);
     }
     
@@ -183,12 +185,14 @@ app.post('/api/timetable', async (req, res) => {
     
     try {
         const { moduleCode, moduleName, date, time, venue } = req.body;
+        const userId = 1; // Default user for now
         const [result] = await pool.execute(
-            'INSERT INTO timetable (module_code, module_name, exam_date, exam_time, venue) VALUES (?, ?, ?, ?, ?)',
-            [moduleCode, moduleName, date, time, venue]
+            'INSERT INTO timetable (module_code, module_name, exam_date, exam_time, venue, user_id) VALUES (?, ?, ?, ?, ?, ?)',
+            [moduleCode, moduleName, date, time, venue, userId]
         );
         res.json({ id: result.insertId, success: true });
     } catch (error) {
+        console.error('Timetable insert error:', error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -202,6 +206,113 @@ app.delete('/api/timetable/:id', async (req, res) => {
         await pool.execute('DELETE FROM timetable WHERE id = ?', [req.params.id]);
         res.json({ success: true });
     } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Money records endpoints (matching schema.sql)
+app.get('/api/money', async (req, res) => {
+    if (!pool) {
+        return res.json([
+            { id: 1, personName: 'John Peter', amount: 150000, borrowDate: '2024-01-15', status: 'pending' }
+        ]);
+    }
+    
+    try {
+        const [rows] = await pool.execute('SELECT * FROM money_records ORDER BY borrow_date DESC');
+        res.json(rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.post('/api/money', async (req, res) => {
+    if (!pool) {
+        return res.json({ id: Date.now(), success: true });
+    }
+    
+    try {
+        const { person, amount, borrowDate, returnDate } = req.body;
+        const userId = 1; // Default user for now
+        const [result] = await pool.execute(
+            'INSERT INTO money_records (person_name, amount, borrow_date, expected_return_date, user_id) VALUES (?, ?, ?, ?, ?)',
+            [person, amount, borrowDate, returnDate, userId]
+        );
+        res.json({ id: result.insertId, success: true });
+    } catch (error) {
+        console.error('Money insert error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Appointments endpoints
+app.get('/api/appointments', async (req, res) => {
+    if (!pool) {
+        return res.json([
+            { id: 1, name: 'Meeting with Supervisor', place: 'University Campus', appointmentDate: '2024-02-15', appointmentTime: '10:00', status: 'upcoming' }
+        ]);
+    }
+    
+    try {
+        const [rows] = await pool.execute('SELECT * FROM appointments ORDER BY appointment_date');
+        res.json(rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.post('/api/appointments', async (req, res) => {
+    if (!pool) {
+        return res.json({ id: Date.now(), success: true });
+    }
+    
+    try {
+        const { name, place, date, time, aim } = req.body;
+        const userId = 1; // Default user for now
+        const [result] = await pool.execute(
+            'INSERT INTO appointments (name, place, appointment_date, appointment_time, aim, user_id) VALUES (?, ?, ?, ?, ?, ?)',
+            [name, place, date, time, aim, userId]
+        );
+        res.json({ id: result.insertId, success: true });
+    } catch (error) {
+        console.error('Appointment insert error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Journeys endpoints
+app.get('/api/journeys', async (req, res) => {
+    if (!pool) {
+        return res.json([
+            { id: 1, journeyFrom: 'Dar es Salaam', journeyTo: 'Arusha', journeyDate: '2024-02-20', journeyTime: '08:00', status: 'pending' }
+        ]);
+    }
+    
+    try {
+        const [rows] = await pool.execute('SELECT * FROM journeys ORDER BY journey_date');
+        res.json(rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.post('/api/journeys', async (req, res) => {
+    if (!pool) {
+        return res.json({ id: Date.now(), success: true });
+    }
+    
+    try {
+        const { from, to, date, time, transportCost, foodCost } = req.body;
+        const userId = 1; // Default user for now
+        const transport = parseFloat(transportCost) || 0;
+        const food = parseFloat(foodCost) || 0;
+        const [result] = await pool.execute(
+            'INSERT INTO journeys (journey_from, journey_to, journey_date, journey_time, transport_cost, food_cost, user_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [from, to, date, time, transport, food, userId]
+        );
+        res.json({ id: result.insertId, success: true });
+    } catch (error) {
+        console.error('Journey insert error:', error);
         res.status(500).json({ error: error.message });
     }
 });

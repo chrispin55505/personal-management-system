@@ -41,7 +41,14 @@ async function initDatabase() {
             waitForConnections: true,
             connectionLimit: 10,
             queueLimit: 0,
-            ssl: process.env.RAILWAY_ENVIRONMENT ? { rejectUnauthorized: false } : false
+            ssl: process.env.RAILWAY_ENVIRONMENT ? { 
+                rejectUnauthorized: false,
+                mode: 'REQUIRED'
+            } : (process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false),
+            connectTimeout: 10000,
+            acquireTimeout: 10000,
+            reconnect: true,
+            charset: 'utf8mb4'
         });
         
         const connection = await pool.getConnection();

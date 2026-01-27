@@ -11,9 +11,14 @@ async function initializeDatabase() {
             user: process.env.RAILWAY_MYSQL_USER || process.env.DB_USER || 'root',
             password: process.env.RAILWAY_MYSQL_PASSWORD || process.env.DB_PASSWORD || '',
             port: process.env.RAILWAY_MYSQL_PORT || 3306,
-            ssl: process.env.RAILWAY_ENVIRONMENT ? { rejectUnauthorized: false } : false,
+            ssl: process.env.RAILWAY_ENVIRONMENT ? { 
+                rejectUnauthorized: false,
+                mode: 'REQUIRED'
+            } : (process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false),
             connectTimeout: 10000,
-            acquireTimeout: 10000
+            acquireTimeout: 10000,
+            reconnect: true,
+            charset: 'utf8mb4'
         });
 
         console.log('🔧 Initializing database...');

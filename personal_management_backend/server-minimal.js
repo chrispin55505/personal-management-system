@@ -178,7 +178,7 @@ app.delete('/api/modules/:id', async (req, res) => {
 app.get('/api/timetable', async (req, res) => {
     if (!pool) {
         return res.json([
-            { id: 1, moduleCode: 'IT101', moduleName: 'Introduction to IT', examDate: '2024-02-15', examTime: '09:00', venue: 'Room 101' }
+            { id: 1, module_code: 'IT101', module_name: 'Introduction to IT', exam_date: '2024-02-15', exam_time: '09:00', venue: 'Room 101' }
         ]);
     }
     
@@ -226,7 +226,7 @@ app.delete('/api/timetable/:id', async (req, res) => {
 app.get('/api/money', async (req, res) => {
     if (!pool) {
         return res.json([
-            { id: 1, personName: 'John Peter', amount: 150000, borrowDate: '2024-01-15', status: 'pending' }
+            { id: 1, person_name: 'John Peter', amount: 150000, borrow_date: '2024-01-15', status: 'pending' }
         ]);
     }
     
@@ -261,7 +261,7 @@ app.post('/api/money', async (req, res) => {
 app.get('/api/appointments', async (req, res) => {
     if (!pool) {
         return res.json([
-            { id: 1, name: 'Meeting with Supervisor', place: 'University Campus', appointmentDate: '2024-02-15', appointmentTime: '10:00', status: 'upcoming' }
+            { id: 1, name: 'Meeting with Supervisor', place: 'University Campus', appointment_date: '2024-02-15', appointment_time: '10:00', status: 'upcoming' }
         ]);
     }
     
@@ -296,7 +296,7 @@ app.post('/api/appointments', async (req, res) => {
 app.get('/api/journeys', async (req, res) => {
     if (!pool) {
         return res.json([
-            { id: 1, journeyFrom: 'Dar es Salaam', journeyTo: 'Arusha', journeyDate: '2024-02-20', journeyTime: '08:00', status: 'pending' }
+            { id: 1, journey_from: 'Dar es Salaam', journey_to: 'Arusha', journey_date: '2024-02-20', journey_time: '08:00', status: 'pending' }
         ]);
     }
     

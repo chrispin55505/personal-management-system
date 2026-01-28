@@ -14,10 +14,10 @@ const dbConfig = {
         process.env.DB_PASSWORD || '',
     database: process.env.RAILWAY_ENVIRONMENT ? 
         process.env.RAILWAY_MYSQL_DATABASE_NAME || process.env.DB_NAME : 
-        process.env.DB_NAME || 'personal_management',
+        process.env.DB_NAME || 'railway',
     port: process.env.RAILWAY_ENVIRONMENT ? 
-        process.env.RAILWAY_MYSQL_PORT || 3306 : 
-        3306,
+        process.env.RAILWAY_MYSQL_PORT || process.env.DB_PORT || 3306 : 
+        process.env.DB_PORT || 3306,
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0,

@@ -135,24 +135,13 @@ router.post('/money', async (req, res) => {
     }
 });
 
-// Appointments endpoints
-router.get('/appointments', async (req, res) => {
-    try {
-        const { pool } = require('../config/database-simple');
-        const [rows] = await pool.execute('SELECT * FROM appointments ORDER BY appointment_date');
-        res.json(rows);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
 router.post('/appointments', async (req, res) => {
     try {
         const { pool } = require('../config/database-simple');
-        const { name, place, date, time, aim } = req.body;
+        const { name, place, date, time, aim, notification } = req.body;
         const [result] = await pool.execute(
-            'INSERT INTO appointments (name, place, appointment_date, appointment_time, aim, user_id) VALUES (?, ?, ?, ?, ?, ?)',
-            [name, place, date, time, aim, 1]
+            'INSERT INTO appointments (name, place, appointment_date, appointment_time, aim, notification, user_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [name, place, date, time, aim, notification || 'none', 1]
         );
         res.json({ id: result.insertId, success: true });
     } catch (error) {
@@ -175,12 +164,12 @@ router.get('/journeys', async (req, res) => {
 router.post('/journeys', async (req, res) => {
     try {
         const { pool } = require('../config/database-simple');
-        const { from, to, date, time, transportCost, foodCost } = req.body;
+        const { from, to, date, time, transportCost, foodCost, status } = req.body;
         const transport = parseFloat(transportCost) || 0;
         const food = parseFloat(foodCost) || 0;
         const [result] = await pool.execute(
-            'INSERT INTO journeys (journey_from, journey_to, journey_date, journey_time, transport_cost, food_cost, user_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [from, to, date, time, transport, food, 1]
+            'INSERT INTO journeys (journey_from, journey_to, journey_date, journey_time, transport_cost, food_cost, user_id, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [from, to, date, time || '00:00', transport, food, 1, status || 'pending']
         );
         res.json({ id: result.insertId, success: true });
     } catch (error) {

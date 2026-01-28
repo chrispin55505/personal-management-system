@@ -16,8 +16,8 @@ router.get('/dashboard/stats', async (req, res) => {
         
         // Get basic counts
         const [modules] = await pool.execute('SELECT COUNT(*) as count FROM modules');
-        const [appointments] = await pool.execute('SELECT COUNT(*) as count FROM appointments WHERE status = "scheduled"');
-        const [money] = await pool.execute('SELECT SUM(amount) as total FROM money WHERE status = "pending"');
+        const [appointments] = await pool.execute('SELECT COUNT(*) as count FROM appointments WHERE status = "upcoming"');
+        const [money] = await pool.execute('SELECT SUM(amount) as total FROM money_records WHERE status = "pending"');
         const [journeys] = await pool.execute('SELECT COUNT(*) as count FROM journeys WHERE status = "pending"');
         
         res.json({
@@ -53,11 +53,12 @@ router.post('/timetable', async (req, res) => {
         const { pool } = require('../config/database-simple');
         const { moduleCode, moduleName, date, time, venue } = req.body;
         const [result] = await pool.execute(
-            'INSERT INTO timetable (module_code, module_name, exam_date, exam_time, venue) VALUES (?, ?, ?, ?, ?)',
-            [moduleCode, moduleName, date, time, venue]
+            'INSERT INTO timetable (module_code, module_name, exam_date, exam_time, venue, user_id) VALUES (?, ?, ?, ?, ?, ?)',
+            [moduleCode, moduleName, date, time, venue, 1]
         );
         res.json({ id: result.insertId, success: true });
     } catch (error) {
+        console.error('Timetable insert error:', error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -76,7 +77,7 @@ router.delete('/timetable/:id', async (req, res) => {
 router.get('/modules', async (req, res) => {
     try {
         const { pool } = require('../config/database-simple');
-        const [rows] = await pool.execute('SELECT * FROM modules ORDER BY module_code');
+        const [rows] = await pool.execute('SELECT * FROM modules ORDER BY code');
         res.json(rows);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -88,11 +89,12 @@ router.post('/modules', async (req, res) => {
         const { pool } = require('../config/database-simple');
         const { code, name, lecturer, semester, year } = req.body;
         const [result] = await pool.execute(
-            'INSERT INTO modules (module_code, module_name, lecturer, semester, year) VALUES (?, ?, ?, ?, ?)',
-            [code, name, lecturer, semester, year]
+            'INSERT INTO modules (code, name, lecturer, semester, year, user_id) VALUES (?, ?, ?, ?, ?, ?)',
+            [code, name, lecturer, semester, year, 1]
         );
         res.json({ id: result.insertId, success: true });
     } catch (error) {
+        console.error('Module insert error:', error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -103,6 +105,86 @@ router.delete('/modules/:id', async (req, res) => {
         await pool.execute('DELETE FROM modules WHERE id = ?', [req.params.id]);
         res.json({ success: true });
     } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Money records endpoints
+router.get('/money', async (req, res) => {
+    try {
+        const { pool } = require('../config/database-simple');
+        const [rows] = await pool.execute('SELECT * FROM money_records ORDER BY borrow_date DESC');
+        res.json(rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+router.post('/money', async (req, res) => {
+    try {
+        const { pool } = require('../config/database-simple');
+        const { person, amount, borrowDate, returnDate } = req.body;
+        const [result] = await pool.execute(
+            'INSERT INTO money_records (person_name, amount, borrow_date, expected_return_date, user_id) VALUES (?, ?, ?, ?, ?)',
+            [person, amount, borrowDate, returnDate, 1]
+        );
+        res.json({ id: result.insertId, success: true });
+    } catch (error) {
+        console.error('Money insert error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Appointments endpoints
+router.get('/appointments', async (req, res) => {
+    try {
+        const { pool } = require('../config/database-simple');
+        const [rows] = await pool.execute('SELECT * FROM appointments ORDER BY appointment_date');
+        res.json(rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+router.post('/appointments', async (req, res) => {
+    try {
+        const { pool } = require('../config/database-simple');
+        const { name, place, date, time, aim } = req.body;
+        const [result] = await pool.execute(
+            'INSERT INTO appointments (name, place, appointment_date, appointment_time, aim, user_id) VALUES (?, ?, ?, ?, ?, ?)',
+            [name, place, date, time, aim, 1]
+        );
+        res.json({ id: result.insertId, success: true });
+    } catch (error) {
+        console.error('Appointment insert error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Journeys endpoints
+router.get('/journeys', async (req, res) => {
+    try {
+        const { pool } = require('../config/database-simple');
+        const [rows] = await pool.execute('SELECT * FROM journeys ORDER BY journey_date');
+        res.json(rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+router.post('/journeys', async (req, res) => {
+    try {
+        const { pool } = require('../config/database-simple');
+        const { from, to, date, time, transportCost, foodCost } = req.body;
+        const transport = parseFloat(transportCost) || 0;
+        const food = parseFloat(foodCost) || 0;
+        const [result] = await pool.execute(
+            'INSERT INTO journeys (journey_from, journey_to, journey_date, journey_time, transport_cost, food_cost, user_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [from, to, date, time, transport, food, 1]
+        );
+        res.json({ id: result.insertId, success: true });
+    } catch (error) {
+        console.error('Journey insert error:', error);
         res.status(500).json({ error: error.message });
     }
 });

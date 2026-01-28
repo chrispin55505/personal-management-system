@@ -33,10 +33,10 @@ async function initDatabase() {
         
         // Then create the connection pool
         pool = mysql.createPool({
-            host: process.env.MYSQLHOST || process.env.RAILWAY_PRIVATE_HOST || process.env.DB_HOST || 'localhost',
+            host: process.env.RAILWAY_PRIVATE_HOST || process.env.DB_HOST || 'localhost',
             user: process.env.RAILWAY_MYSQL_USER || process.env.DB_USER || 'root',
             password: process.env.RAILWAY_MYSQL_PASSWORD || process.env.DB_PASSWORD || '',
-            database: 'railway', // Always use railway database
+            database: process.env.RAILWAY_MYSQL_DATABASE_NAME || process.env.DB_NAME || 'railway', // Use railway database
             port: process.env.RAILWAY_MYSQL_PORT || process.env.DB_PORT || 3306,
             waitForConnections: true,
             connectionLimit: 10,

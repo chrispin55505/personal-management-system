@@ -8,8 +8,18 @@ class PersonalManagementApp {
     }
 
     getApiBase() {
-        // Simplified API base URL for Railway
-        return '/api';
+        // Enhanced API base URL detection for Railway.app deployment
+        const hostname = window.location.hostname;
+        const port = window.location.port;
+        
+        // If on Railway (or any production domain), use relative path
+        if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+            return '/api';
+        }
+        
+        // Local development - use the current port or fallback to 6000
+        const localPort = port || 6000;
+        return `http://localhost:${localPort}/api`;
     }
 
     async init() {
@@ -216,7 +226,10 @@ class PersonalManagementApp {
 
     async apiCall(endpoint, options = {}) {
         try {
-            const response = await fetch(`${this.apiBase}${endpoint}`, {
+            const url = `${this.apiBase}${endpoint}`;
+            console.log(`🌐 API Call: ${options.method || 'GET'} ${url}`);
+            
+            const response = await fetch(url, {
                 headers: {
                     'Content-Type': 'application/json',
                     ...options.headers
@@ -225,14 +238,28 @@ class PersonalManagementApp {
                 ...options
             });
 
+            console.log(`📡 Response status: ${response.status}`);
+
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                const errorText = await response.text();
+                console.error(`❌ API Error (${response.status}):`, errorText);
+                throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
             }
 
-            return await response.json();
+            const data = await response.json();
+            console.log(`✅ API Response:`, data);
+            return data;
         } catch (error) {
-            console.error('API call failed:', error);
-            throw error;
+            console.error('❌ API call failed:', error);
+            
+            // Show user-friendly error message
+            if (error.message.includes('Failed to fetch')) {
+                throw new Error('Network error - please check your connection');
+            } else if (error.message.includes('HTTP error! status: 500')) {
+                throw new Error('Server error - please try again later');
+            } else {
+                throw error;
+            }
         }
     }
 

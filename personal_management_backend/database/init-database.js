@@ -7,10 +7,10 @@ async function initializeDatabase() {
     try {
         // Create connection without database specified
         pool = mysql.createPool({
-            host: process.env.RAILWAY_PRIVATE_HOST || process.env.DB_HOST || 'localhost',
+            host: process.env.MYSQLHOST || process.env.RAILWAY_PRIVATE_HOST || process.env.DB_HOST || 'localhost',
             user: process.env.RAILWAY_MYSQL_USER || process.env.DB_USER || 'root',
             password: process.env.RAILWAY_MYSQL_PASSWORD || process.env.DB_PASSWORD || '',
-            port: process.env.RAILWAY_MYSQL_PORT || 3306,
+            port: process.env.RAILWAY_MYSQL_PORT || process.env.DB_PORT || 3306,
             ssl: process.env.RAILWAY_ENVIRONMENT ? { 
                 rejectUnauthorized: false,
                 mode: 'REQUIRED'
@@ -22,12 +22,13 @@ async function initializeDatabase() {
         });
 
         console.log('🔧 Initializing database...');
-        console.log('🔗 Host:', process.env.RAILWAY_PRIVATE_HOST || process.env.DB_HOST);
+        console.log('🔗 Host:', process.env.MYSQLHOST || process.env.RAILWAY_PRIVATE_HOST || process.env.DB_HOST);
         console.log('👤 User:', process.env.RAILWAY_MYSQL_USER || process.env.DB_USER);
+        console.log('🗄️ Database:', process.env.RAILWAY_MYSQL_DATABASE_NAME || process.env.DB_NAME);
 
         // Create database if not exists
-        await pool.execute('CREATE DATABASE IF NOT EXISTS personal_management');
-        await pool.execute('USE personal_management');
+        await pool.execute('CREATE DATABASE IF NOT EXISTS railway');
+        await pool.execute('USE railway');
 
         // Create tables
         const tables = [

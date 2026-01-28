@@ -1,7 +1,7 @@
 -- Personal Management Database Schema
 -- Create database if it doesn't exist
-CREATE DATABASE IF NOT EXISTS personal_management;
-USE personal_management;
+CREATE DATABASE IF NOT EXISTS railway;
+USE railway;
 
 -- Users table for authentication
 CREATE TABLE IF NOT EXISTS users (

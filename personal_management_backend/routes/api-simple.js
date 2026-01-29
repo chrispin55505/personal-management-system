@@ -134,6 +134,19 @@ const router = express.Router();
 // Import simplified controllers
 const authController = require('../controllers/authController-simple');
 
+// Helper function to log activities
+async function logActivity(pool, description, type, status = 'completed') {
+    try {
+        await pool.query(
+            'INSERT INTO activities (description, type, status, user_id) VALUES (?, ?, ?, ?)',
+            [description, type, status, 1]
+        );
+        console.log(`📝 Activity logged: ${description}`);
+    } catch (error) {
+        console.error('❌ Failed to log activity:', error);
+    }
+}
+
 // Simple dashboard stats
 router.get('/dashboard/stats', async (req, res) => {
     try {
@@ -226,6 +239,10 @@ router.post('/timetable', async (req, res) => {
         );
         
         console.log(`✅ Timetable entry added with ID: ${result.insertId}`);
+        
+        // Log activity
+        await logActivity(pool, `Added exam: ${moduleName} (${moduleCode}) on ${date}`, 'timetable', 'added');
+        
         res.json({ id: result.insertId, success: true, message: 'Timetable entry added successfully' });
     } catch (error) {
         console.error('❌ Timetable insert error:', error);
@@ -250,6 +267,10 @@ router.delete('/timetable/:id', async (req, res) => {
         }
         
         console.log(`✅ Timetable entry ${id} deleted`);
+        
+        // Log activity
+        await logActivity(pool, `Deleted exam entry`, 'timetable', 'deleted');
+        
         res.json({ success: true, message: 'Timetable entry deleted successfully' });
     } catch (error) {
         console.error('❌ Timetable delete error:', error);
@@ -283,6 +304,10 @@ router.put('/timetable/:id', async (req, res) => {
         }
         
         console.log(`✅ Timetable entry ${id} updated`);
+        
+        // Log activity
+        await logActivity(pool, `Updated exam: ${moduleName} (${moduleCode})`, 'timetable', 'updated');
+        
         res.json({ success: true, message: 'Timetable entry updated successfully' });
     } catch (error) {
         console.error('❌ Timetable update error:', error);
@@ -328,6 +353,10 @@ router.post('/modules', async (req, res) => {
         );
         
         console.log(`✅ Module added with ID: ${result.insertId}`);
+        
+        // Log activity
+        await logActivity(pool, `Added module: ${name} (${code})`, 'module', 'added');
+        
         return sendApiResponse(res, true, { 
             id: result.insertId, 
             message: 'Module added successfully' 
@@ -364,6 +393,10 @@ router.put('/modules/:id', async (req, res) => {
         }
         
         console.log(`✅ Module ${id} updated`);
+        
+        // Log activity
+        await logActivity(pool, `Updated module: ${name} (${code})`, 'module', 'updated');
+        
         res.json({ success: true, message: 'Module updated successfully' });
     } catch (error) {
         console.error('❌ Module update error:', error);
@@ -426,6 +459,10 @@ router.post('/appointments', async (req, res) => {
         );
         
         console.log(`✅ Appointment added with ID: ${result.insertId}`);
+        
+        // Log activity
+        await logActivity(pool, `Added appointment: ${name} on ${date} at ${time}`, 'appointment', 'added');
+        
         return sendApiResponse(res, true, { 
             id: result.insertId, 
             message: 'Appointment added successfully' 
@@ -485,6 +522,10 @@ router.post('/journeys', async (req, res) => {
         );
         
         console.log(`✅ Journey added with ID: ${result.insertId}`);
+        
+        // Log activity
+        await logActivity(pool, `Added journey: ${from} to ${to} on ${date}`, 'journey', 'added');
+        
         res.json({ id: result.insertId, success: true, message: 'Journey added successfully' });
     } catch (error) {
         console.error('❌ Journey insert error:', error);

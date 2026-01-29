@@ -327,18 +327,16 @@ class PersonalManagementApp {
             const data = await this.apiCall('/dashboard/stats');
             
             // Update dashboard with animated counters
+            this.animateCounter('moduleCount', data.moduleCount || 0);
             this.animateCounter('appointmentCount', data.appointmentCount || 0);
             this.animateCounter('moneyOwed', data.moneyOwed || 0);
-            this.animateCounter('moduleCount', data.moduleCount || 0);
             this.animateCounter('journeyCount', data.journeyCount || 0);
             
-            console.log('✅ Dashboard stats loaded successfully:', data);
+            // Load recent activities
+            await this.loadRecentActivities();
+            
         } catch (error) {
-            console.error('❌ Dashboard stats error:', error);
-            // Set default values on error
-            this.animateCounter('appointmentCount', 0);
-            this.animateCounter('moneyOwed', 0);
-            this.animateCounter('moduleCount', 0);
+            console.error('Failed to load dashboard data:', error);
             this.animateCounter('journeyCount', 0);
         }
     }
@@ -380,7 +378,7 @@ class PersonalManagementApp {
             activities.slice(0, 5).forEach(activity => {
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td>${this.formatDate(activity.date)}</td>
+                    <td>${this.formatDate(activity.activity_date || activity.created_at)}</td>
                     <td>${activity.description}</td>
                     <td>${activity.type}</td>
                     <td><span class="status status-${activity.status}">${activity.status}</span></td>

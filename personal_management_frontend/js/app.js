@@ -1228,6 +1228,7 @@ class PersonalManagementApp {
             try {
                 await this.apiCall(`/timetable/${id}`, { method: 'DELETE' });
                 await this.loadTimetable();
+                await this.loadDashboardData(); // Real-time dashboard update
                 this.showNotification('Exam Deleted', 'Exam has been deleted successfully');
             } catch (error) {
                 console.error('Failed to delete timetable:', error);
@@ -1236,35 +1237,12 @@ class PersonalManagementApp {
         }
     }
 
-    async editMarks(id) {
-        console.log('Edit marks:', id);
-        // TODO: Implement edit functionality
-    }
-
-    async deleteMarks(id) {
-        if (confirm('Are you sure you want to delete these marks?')) {
-            try {
-                await this.apiCall(`/marks/${id}`, { method: 'DELETE' });
-                await this.loadMarks();
-                this.showNotification('Marks Deleted', 'Marks have been deleted successfully');
-            } catch (error) {
-                console.error('Failed to delete marks:', error);
-                alert('Failed to delete marks. Please try again.');
-            }
-        }
-    }
-
-    async editMoney(id) {
-        console.log('Edit money:', id);
-        // TODO: Implement edit functionality
-    }
-
     async deleteMoney(id) {
         if (confirm('Are you sure you want to delete this money record?')) {
             try {
                 await this.apiCall(`/money/${id}`, { method: 'DELETE' });
                 await this.loadMoney();
-                await this.loadDashboardData();
+                await this.loadDashboardData(); // Real-time dashboard update
                 this.showNotification('Money Record Deleted', 'Money record has been deleted successfully');
             } catch (error) {
                 console.error('Failed to delete money record:', error);
@@ -1273,21 +1251,33 @@ class PersonalManagementApp {
         }
     }
 
-    async markMoneyReturned(id) {
-        try {
-            await this.apiCall(`/money/${id}/return`, { method: 'PUT' });
-            await this.loadMoney();
-            await this.loadDashboardData();
-            this.showNotification('Money Returned', 'Money has been marked as returned');
-        } catch (error) {
-            console.error('Failed to mark money as returned:', error);
-            alert('Failed to update money record. Please try again.');
+    async deleteModule(id) {
+        if (confirm('Are you sure you want to delete this module?')) {
+            try {
+                await this.apiCall(`/modules/${id}`, { method: 'DELETE' });
+                await this.loadModules();
+                await this.loadModulesIntoSelect();
+                await this.loadDashboardData(); // Real-time dashboard update
+                this.showNotification('Module Deleted', 'Module has been deleted successfully');
+            } catch (error) {
+                console.error('Failed to delete module:', error);
+                alert('Failed to delete module. Please try again.');
+            }
         }
     }
 
-    async editSavings(id) {
-        console.log('Edit savings:', id);
-        // TODO: Implement edit functionality
+    async deleteAppointment(id) {
+        if (confirm('Are you sure you want to delete this appointment?')) {
+            try {
+                await this.apiCall(`/appointments/${id}`, { method: 'DELETE' });
+                await this.loadAppointments();
+                await this.loadDashboardData(); // Real-time dashboard update
+                this.showNotification('Appointment Deleted', 'Appointment has been deleted successfully');
+            } catch (error) {
+                console.error('Failed to delete appointment:', error);
+                alert('Failed to delete appointment. Please try again.');
+            }
+        }
     }
 
     async deleteSavings(id) {
@@ -1302,83 +1292,6 @@ class PersonalManagementApp {
                 alert('Failed to delete savings. Please try again.');
             }
         }
-    }
-
-    async editModule(id) {
-        console.log('Edit module:', id);
-        // TODO: Implement edit functionality
-    }
-
-    async deleteModule(id) {
-        if (confirm('Are you sure you want to delete this module?')) {
-            try {
-                await this.apiCall(`/modules/${id}`, { method: 'DELETE' });
-                await this.loadModules();
-                await this.loadModulesIntoSelect();
-                await this.loadDashboardData();
-                this.showNotification('Module Deleted', 'Module has been deleted successfully');
-            } catch (error) {
-                console.error('Failed to delete module:', error);
-                alert('Failed to delete module. Please try again.');
-            }
-        }
-    }
-
-    async editAppointment(id) {
-        console.log('Edit appointment:', id);
-        // TODO: Implement edit functionality
-    }
-
-    async deleteAppointment(id) {
-        if (confirm('Are you sure you want to delete this appointment?')) {
-            try {
-                await this.apiCall(`/appointments/${id}`, { method: 'DELETE' });
-                await this.loadAppointments();
-                await this.loadDashboardData();
-                this.showNotification('Appointment Deleted', 'Appointment has been deleted successfully');
-            } catch (error) {
-                console.error('Failed to delete appointment:', error);
-                alert('Failed to delete appointment. Please try again.');
-            }
-        }
-    }
-
-    async completeAppointment(id) {
-        try {
-            await this.apiCall(`/appointments/${id}/complete`, { method: 'PUT' });
-            await this.loadAppointments();
-            await this.loadDashboardData();
-            this.showNotification('Appointment Completed', 'Appointment has been marked as completed');
-        } catch (error) {
-            console.error('Failed to complete appointment:', error);
-            alert('Failed to update appointment. Please try again.');
-        }
-    }
-
-    async editJourney(id) {
-        // Find the journey and populate the form
-        this.apiCall('/journeys').then(journeys => {
-            const journey = journeys.find(j => j.id === id);
-            if (journey) {
-                document.getElementById('journeyFrom').value = journey.journey_from;
-                document.getElementById('journeyTo').value = journey.journey_to;
-                document.getElementById('journeyDate').value = journey.journey_date;
-                document.getElementById('journeyTime').value = journey.journey_time || '';
-                document.getElementById('transportCost').value = journey.transport_cost || '';
-                document.getElementById('foodCost').value = journey.food_cost || '';
-                
-                // Change button to update mode
-                const addBtn = document.getElementById('addJourneyBtn');
-                addBtn.textContent = 'Update Journey';
-                addBtn.onclick = () => this.updateJourney(id);
-                
-                // Scroll to form
-                document.getElementById('journeys').scrollIntoView({ behavior: 'smooth' });
-            }
-        }).catch(error => {
-            console.error('Failed to load journey for editing:', error);
-            alert('Failed to load journey data for editing');
-        });
     }
 
     async updateJourney(id) {

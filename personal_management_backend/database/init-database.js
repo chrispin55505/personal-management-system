@@ -21,6 +21,37 @@ async function retryDatabaseConnection(maxRetries = 5, delayMs = 3000) {
                 const mysqlHost = process.env.RAILWAY_SERVICE_MYSQL_URL;
                 console.log('🌐 MySQL Host:', mysqlHost);
                 
+                // Test basic connectivity first
+                console.log('🔍 Testing basic connectivity to host...');
+                try {
+                    const net = require('net');
+                    const socket = new net.Socket();
+                    
+                    const connectivityTest = new Promise((resolve, reject) => {
+                        socket.setTimeout(5000);
+                        socket.connect(3306, mysqlHost, () => {
+                            console.log('✅ Host is reachable on port 3306');
+                            socket.destroy();
+                            resolve(true);
+                        });
+                        socket.on('error', (err) => {
+                            console.log('❌ Host unreachable:', err.message);
+                            socket.destroy();
+                            reject(err);
+                        });
+                        socket.on('timeout', () => {
+                            console.log('❌ Connection to host timed out');
+                            socket.destroy();
+                            reject(new Error('Timeout'));
+                        });
+                    });
+                    
+                    await connectivityTest;
+                } catch (connectivityError) {
+                    console.log('⚠️ Basic connectivity test failed:', connectivityError.message);
+                    console.log('💡 This suggests the MySQL service is not running or not accessible');
+                }
+                
                 // Railway provides the host, but we need to get credentials from other variables
                 connectionConfig = {
                     host: mysqlHost,

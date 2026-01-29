@@ -56,29 +56,64 @@ class PersonalManagementApp {
             this.notification.style.display = 'none';
         });
 
-        // Section-specific event listeners
-        this.setupSectionListeners();
-    }
-
-    setupSectionListeners() {
-        // Timetable section
+        // Form submissions
         document.getElementById('addTimetableBtn')?.addEventListener('click', () => this.addTimetable());
-
-        // Marks section
-        document.getElementById('addMarksBtn')?.addEventListener('click', () => this.addMarks());
-
-        // Money section
+        document.getElementById('addModuleBtn')?.addEventListener('click', () => this.addModule());
         document.getElementById('addMoneyBtn')?.addEventListener('click', () => this.addMoneyRecord());
         document.getElementById('addSavingsBtn')?.addEventListener('click', () => this.addSavings());
-
-        // Modules section
-        document.getElementById('addModuleBtn')?.addEventListener('click', () => this.addModule());
-
-        // Appointments section
         document.getElementById('addAppointmentBtn')?.addEventListener('click', () => this.addAppointment());
-
-        // Journeys section
         document.getElementById('addJourneyBtn')?.addEventListener('click', () => this.addJourney());
+
+        // Event delegation for action buttons
+        document.addEventListener('click', (e) => {
+            const button = e.target.closest('button');
+            if (!button) return;
+
+            const action = button.dataset.action;
+            const id = button.dataset.id;
+
+            if (action && id) {
+                e.preventDefault();
+                switch (action) {
+                    case 'edit-module':
+                        this.editModule(parseInt(id));
+                        break;
+                    case 'delete-module':
+                        this.deleteModule(parseInt(id));
+                        break;
+                    case 'edit-timetable':
+                        this.editTimetable(parseInt(id));
+                        break;
+                    case 'delete-timetable':
+                        this.deleteTimetable(parseInt(id));
+                        break;
+                    case 'edit-money':
+                        this.editMoney(parseInt(id));
+                        break;
+                    case 'delete-money':
+                        this.deleteMoney(parseInt(id));
+                        break;
+                    case 'edit-appointment':
+                        this.editAppointment(parseInt(id));
+                        break;
+                    case 'delete-appointment':
+                        this.deleteAppointment(parseInt(id));
+                        break;
+                    case 'edit-journey':
+                        this.editJourney(parseInt(id));
+                        break;
+                    case 'delete-journey':
+                        this.deleteJourney(parseInt(id));
+                        break;
+                    case 'edit-savings':
+                        this.editSavings(parseInt(id));
+                        break;
+                    case 'delete-savings':
+                        this.deleteSavings(parseInt(id));
+                        break;
+                }
+            }
+        });
     }
 
     async checkAuthStatus() {
@@ -370,8 +405,8 @@ class PersonalManagementApp {
                     <td>${exam.exam_time}</td>
                     <td>${exam.venue || 'N/A'}</td>
                     <td>
-                        <button class="action-btn edit-btn" onclick="app.editTimetable(${exam.id})"><i class="fas fa-edit"></i></button>
-                        <button class="action-btn delete-btn" onclick="app.deleteTimetable(${exam.id})"><i class="fas fa-trash"></i></button>
+                        <button class="action-btn edit-btn" data-id="${exam.id}" data-action="edit-timetable"><i class="fas fa-edit"></i></button>
+                        <button class="action-btn delete-btn" data-id="${exam.id}" data-action="delete-timetable"><i class="fas fa-trash"></i></button>
                     </td>
                 `;
                 tbody.appendChild(row);
@@ -614,8 +649,8 @@ class PersonalManagementApp {
                     <td>Semester ${module.semester || 1}</td>
                     <td>Year ${module.year || 1}</td>
                     <td>
-                        <button class="action-btn edit-btn" onclick="app.editModule(${module.id})"><i class="fas fa-edit"></i></button>
-                        <button class="action-btn delete-btn" onclick="app.deleteModule(${module.id})"><i class="fas fa-trash"></i></button>
+                        <button class="action-btn edit-btn" data-id="${module.id}" data-action="edit-module"><i class="fas fa-edit"></i></button>
+                        <button class="action-btn delete-btn" data-id="${module.id}" data-action="delete-module"><i class="fas fa-trash"></i></button>
                     </td>
                 `;
                 tbody.appendChild(row);

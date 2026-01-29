@@ -126,20 +126,19 @@ async function retryDatabaseConnection(maxRetries = 5, delayMs = 3000) {
                     console.log('✅ Using hostname with credentials');
                 }
             } else {
-                // Fallback to individual environment variables
+                // Fallback to hardcoded Railway MySQL URL since environment variables aren't working
+                console.log('🌐 Using hardcoded Railway MySQL URL...');
                 connectionConfig = {
-                    host: process.env.RAILWAY_PRIVATE_HOST || process.env.DB_HOST || 'localhost',
-                    user: process.env.RAILWAY_MYSQL_USER || process.env.DB_USER || 'root',
-                    password: process.env.RAILWAY_MYSQL_PASSWORD || process.env.DB_PASSWORD || '@nzali2006',
-                    port: process.env.RAILWAY_MYSQL_PORT || process.env.DB_PORT || 3306,
-                    database: process.env.RAILWAY_MYSQL_DATABASE_NAME || process.env.DB_NAME || 'database',
-                    ssl: process.env.RAILWAY_ENVIRONMENT ? { 
-                        rejectUnauthorized: false,
-                        mode: 'REQUIRED'
-                    } : (process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false),
+                    host: 'mysql.railway.internal',
+                    user: 'chrispin',
+                    password: 'ELgFXlNvQaWYcgqOjqRHrHrRxwGhnKMn',
+                    port: 3306,
+                    database: 'database',
+                    ssl: { rejectUnauthorized: false },
                     connectTimeout: 10000,
                     charset: 'utf8mb4'
                 };
+                console.log('✅ Using hardcoded Railway credentials');
             }
             
             console.log('🔧 Connection config:', {

@@ -115,10 +115,10 @@ async function retryDatabaseConnection(maxRetries = 5, delayMs = 3000) {
                     
                     connectionConfig = {
                         host: correctHost,
-                        user: process.env.RAILWAY_MYSQL_USER || process.env.MYSQLUSER || 'root',
-                        password: process.env.RAILWAY_MYSQL_PASSWORD || process.env.MYSQLPASSWORD || '@nzali2006',
-                        port: process.env.RAILWAY_MYSQL_PORT || process.env.MYSQLPORT || 3306,
-                        database: process.env.RAILWAY_MYSQL_DATABASE_NAME || process.env.MYSQL_DATABASE || 'database',
+                        user: process.env.MYSQLUSER || 'chrispin',
+                        password: process.env.MYSQLPASSWORD || process.env.MYSQL_ROOT_PASSWORD || 'ELgFXlNvQaWYcgqOjqRHrHrRxwGhnKMn',
+                        port: process.env.MYSQLPORT || 3306,
+                        database: process.env.MYSQLDATABASE || process.env.MYSQL_DATABASE || 'database',
                         ssl: { rejectUnauthorized: false },
                         connectTimeout: 10000,
                         charset: 'utf8mb4'

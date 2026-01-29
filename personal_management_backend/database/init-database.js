@@ -15,8 +15,58 @@ async function retryDatabaseConnection(maxRetries = 5, delayMs = 3000) {
             // Log all connection parameters (without password)
             let connectionConfig;
             
-            // Try to parse Railway MySQL URL first
-            if (process.env.RAILWAY_SERVICE_MYSQL_URL) {
+            // Try to parse Railway MySQL URL first (using correct variable names)
+            if (process.env.MYSQL_URL || process.env.DATABASE_URL) {
+                const mysqlUrl = process.env.MYSQL_URL || process.env.DATABASE_URL;
+                console.log('🔗 Found MYSQL_URL:', mysqlUrl ? '[SET]' : 'NOT SET');
+                console.log('🔗 Found DATABASE_URL:', process.env.DATABASE_URL ? '[SET]' : 'NOT SET');
+                
+                // Check if it's a full URL or just a hostname
+                if (mysqlUrl && mysqlUrl.startsWith('mysql://')) {
+                    console.log('🌐 Full MySQL URL detected, parsing...');
+                    console.log('🌐 MySQL URL:', mysqlUrl.replace(/:([^:@]+)@/, ':***@')); // Hide password
+                    
+                    try {
+                        // Parse mysql://user:password@host:port/database
+                        const urlPattern = /^mysql:\/\/([^:]+):([^@]+)@([^:]+):(\d+)\/(.+)$/;
+                        const match = mysqlUrl.match(urlPattern);
+                        
+                        if (match) {
+                            connectionConfig = {
+                                host: match[3],
+                                user: match[1],
+                                password: match[2],
+                                port: parseInt(match[4]),
+                                database: match[5],
+                                ssl: { rejectUnauthorized: false },
+                                connectTimeout: 10000,
+                                charset: 'utf8mb4'
+                            };
+                            console.log('✅ Successfully parsed MySQL URL');
+                            console.log('🔧 Using host:', match[3]);
+                        } else {
+                            throw new Error('Invalid MySQL URL format');
+                        }
+                    } catch (parseError) {
+                        console.error('❌ Failed to parse MySQL URL:', parseError.message);
+                        throw parseError;
+                    }
+                } else {
+                    // Use individual Railway variables
+                    console.log('🌐 Using individual Railway variables...');
+                    connectionConfig = {
+                        host: process.env.MYSQLHOST || process.env.RAILWAY_PRIVATE_DOMAIN,
+                        user: process.env.MYSQLUSER || 'chrispin',
+                        password: process.env.MYSQLPASSWORD || process.env.MYSQL_ROOT_PASSWORD,
+                        port: process.env.MYSQLPORT || 3306,
+                        database: process.env.MYSQLDATABASE || process.env.MYSQL_DATABASE || 'database',
+                        ssl: { rejectUnauthorized: false },
+                        connectTimeout: 10000,
+                        charset: 'utf8mb4'
+                    };
+                    console.log('✅ Using Railway environment variables');
+                }
+            } else if (process.env.RAILWAY_SERVICE_MYSQL_URL) {
                 const mysqlUrl = process.env.RAILWAY_SERVICE_MYSQL_URL;
                 console.log('🔗 Found RAILWAY_SERVICE_MYSQL_URL:', mysqlUrl);
                 

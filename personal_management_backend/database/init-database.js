@@ -17,34 +17,22 @@ async function retryDatabaseConnection(maxRetries = 5, delayMs = 3000) {
             
             // Try to parse Railway MySQL URL first
             if (process.env.RAILWAY_SERVICE_MYSQL_URL) {
-                console.log('🔗 Found RAILWAY_SERVICE_MYSQL_URL, parsing...');
-                const mysqlUrl = process.env.RAILWAY_SERVICE_MYSQL_URL;
-                console.log('🌐 MySQL URL:', mysqlUrl.replace(/:([^:@]+)@/, ':***@')); // Hide password
+                console.log('🔗 Found RAILWAY_SERVICE_MYSQL_URL, using as host...');
+                const mysqlHost = process.env.RAILWAY_SERVICE_MYSQL_URL;
+                console.log('🌐 MySQL Host:', mysqlHost);
                 
-                try {
-                    // Parse mysql://user:password@host:port/database
-                    const urlPattern = /^mysql:\/\/([^:]+):([^@]+)@([^:]+):(\d+)\/(.+)$/;
-                    const match = mysqlUrl.match(urlPattern);
-                    
-                    if (match) {
-                        connectionConfig = {
-                            host: match[3],
-                            user: match[1],
-                            password: match[2],
-                            port: parseInt(match[4]),
-                            database: match[5],
-                            ssl: { rejectUnauthorized: false },
-                            connectTimeout: 10000,
-                            charset: 'utf8mb4'
-                        };
-                        console.log('✅ Successfully parsed MySQL URL');
-                    } else {
-                        throw new Error('Invalid MySQL URL format');
-                    }
-                } catch (parseError) {
-                    console.error('❌ Failed to parse MySQL URL:', parseError.message);
-                    throw parseError;
-                }
+                // Railway provides the host, but we need to get credentials from other variables
+                connectionConfig = {
+                    host: mysqlHost,
+                    user: process.env.RAILWAY_MYSQL_USER || process.env.MYSQLUSER || 'root',
+                    password: process.env.RAILWAY_MYSQL_PASSWORD || process.env.MYSQLPASSWORD || '',
+                    port: process.env.RAILWAY_MYSQL_PORT || process.env.MYSQLPORT || 3306,
+                    database: process.env.RAILWAY_MYSQL_DATABASE_NAME || process.env.MYSQL_DATABASE || 'railway',
+                    ssl: { rejectUnauthorized: false },
+                    connectTimeout: 10000,
+                    charset: 'utf8mb4'
+                };
+                console.log('✅ Using Railway MySQL host with credentials');
             } else {
                 // Fallback to individual environment variables
                 connectionConfig = {
@@ -69,8 +57,16 @@ async function retryDatabaseConnection(maxRetries = 5, delayMs = 3000) {
                 database: connectionConfig.database || 'railway',
                 ssl: connectionConfig.ssl ? 'ENABLED' : 'DISABLED',
                 railwayEnv: process.env.RAILWAY_ENVIRONMENT ? 'YES' : 'NO',
-                railwayMysqlUrl: process.env.RAILWAY_SERVICE_MYSQL_URL ? '[SET]' : '[NOT SET]',
-                allEnvVars: Object.keys(process.env).filter(key => key.includes('RAILWAY') || key.includes('MYSQL') || key.includes('DB'))
+                railwayMysqlUrl: process.env.RAILWAY_SERVICE_MYSQL_URL || 'NOT SET',
+                // Show all potential credential variables
+                railwayMysqlUser: process.env.RAILWAY_MYSQL_USER || 'NOT SET',
+                mysqlUser: process.env.MYSQLUSER || 'NOT SET',
+                railwayMysqlPassword: process.env.RAILWAY_MYSQL_PASSWORD ? '[SET]' : '[NOT SET',
+                mysqlPassword: process.env.MYSQLPASSWORD ? '[SET]' : '[NOT SET]',
+                railwayMysqlPort: process.env.RAILWAY_MYSQL_PORT || 'NOT SET',
+                mysqlPort: process.env.MYSQLPORT || 'NOT SET',
+                railwayMysqlDatabase: process.env.RAILWAY_MYSQL_DATABASE_NAME || 'NOT SET',
+                mysqlDatabase: process.env.MYSQL_DATABASE || 'NOT SET'
             });
             
             const pool = mysql.createPool(connectionConfig);

@@ -257,6 +257,42 @@ router.delete('/timetable/:id', async (req, res) => {
     }
 });
 
+router.put('/timetable/:id', async (req, res) => {
+    try {
+        const { pool } = require('../config/database-simple');
+        const id = req.params.id;
+        const { moduleCode, moduleName, date, time, venue } = req.body;
+        
+        console.log('📅 Updating timetable entry:', { id, moduleCode, moduleName, date, time, venue });
+        
+        // Validate required fields
+        if (!moduleCode || !moduleName || !date || !time) {
+            return res.status(400).json({ 
+                error: 'Missing required fields',
+                required: ['moduleCode', 'moduleName', 'date', 'time']
+            });
+        }
+        
+        const [result] = await pool.query(
+            'UPDATE timetable SET module_code = ?, module_name = ?, exam_date = ?, exam_time = ?, venue = ? WHERE id = ?',
+            [moduleCode, moduleName, date, time, venue || '', id]
+        );
+        
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'Timetable entry not found' });
+        }
+        
+        console.log(`✅ Timetable entry ${id} updated`);
+        res.json({ success: true, message: 'Timetable entry updated successfully' });
+    } catch (error) {
+        console.error('❌ Timetable update error:', error);
+        res.status(500).json({ 
+            error: 'Failed to update timetable entry',
+            details: error.message 
+        });
+    }
+});
+
 // Similar simplified routes for other modules...
 router.get('/modules', async (req, res) => {
     try {
@@ -475,6 +511,60 @@ router.delete('/savings/:id', async (req, res) => {
     } catch (error) {
         console.error('❌ Savings delete error:', error);
         res.status(500).json({ error: error.message });
+    }
+});
+
+router.put('/appointments/:id/complete', async (req, res) => {
+    try {
+        const { pool } = require('../config/database-simple');
+        const id = req.params.id;
+        
+        console.log('📅 Completing appointment:', { id });
+        
+        const [result] = await pool.query(
+            'UPDATE appointments SET status = "completed" WHERE id = ?',
+            [id]
+        );
+        
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'Appointment not found' });
+        }
+        
+        console.log(`✅ Appointment ${id} marked as completed`);
+        res.json({ success: true, message: 'Appointment marked as completed' });
+    } catch (error) {
+        console.error('❌ Appointment complete error:', error);
+        res.status(500).json({ 
+            error: 'Failed to complete appointment',
+            details: error.message 
+        });
+    }
+});
+
+router.put('/money/:id/return', async (req, res) => {
+    try {
+        const { pool } = require('../config/database-simple');
+        const id = req.params.id;
+        
+        console.log('💰 Marking money as returned:', { id });
+        
+        const [result] = await pool.query(
+            'UPDATE money_records SET status = "returned" WHERE id = ?',
+            [id]
+        );
+        
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'Money record not found' });
+        }
+        
+        console.log(`✅ Money record ${id} marked as returned`);
+        res.json({ success: true, message: 'Money marked as returned' });
+    } catch (error) {
+        console.error('❌ Money return error:', error);
+        res.status(500).json({ 
+            error: 'Failed to mark money as returned',
+            details: error.message 
+        });
     }
 });
 

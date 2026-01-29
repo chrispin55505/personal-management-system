@@ -212,6 +212,7 @@ class PersonalManagementApp {
         this.dashboardContainer.style.display = 'block';
         document.getElementById('currentUser').textContent = this.currentUser?.username || 'Admin User';
         this.loadDashboardData();
+        this.startAutoRefresh(); // Start auto-refresh
     }
 
     showNotification(title, message) {
@@ -287,15 +288,49 @@ class PersonalManagementApp {
         try {
             const data = await this.apiCall('/dashboard/stats');
             
-            document.getElementById('appointmentCount').textContent = data.appointmentCount || 0;
-            document.getElementById('moneyOwed').textContent = (data.moneyOwed || 0).toLocaleString();
-            document.getElementById('moduleCount').textContent = data.moduleCount || 0;
-            document.getElementById('journeyCount').textContent = data.journeyCount || 0;
-
-            await this.loadRecentActivities();
+            // Update dashboard with animated counters
+            this.animateCounter('appointmentCount', data.appointmentCount || 0);
+            this.animateCounter('moneyOwed', data.moneyOwed || 0);
+            this.animateCounter('moduleCount', data.moduleCount || 0);
+            this.animateCounter('journeyCount', data.journeyCount || 0);
+            
+            console.log('✅ Dashboard stats loaded successfully:', data);
         } catch (error) {
-            console.error('Failed to load dashboard data:', error);
+            console.error('❌ Dashboard stats error:', error);
+            // Set default values on error
+            this.animateCounter('appointmentCount', 0);
+            this.animateCounter('moneyOwed', 0);
+            this.animateCounter('moduleCount', 0);
+            this.animateCounter('journeyCount', 0);
         }
+    }
+
+    animateCounter(elementId, targetValue) {
+        const element = document.getElementById(elementId);
+        const startValue = parseInt(element.textContent) || 0;
+        const duration = 1000; // 1 second animation
+        const steps = 30;
+        const increment = (targetValue - startValue) / steps;
+        let currentStep = 0;
+        
+        const timer = setInterval(() => {
+            currentStep++;
+            const currentValue = Math.round(startValue + (increment * currentStep));
+            element.textContent = currentValue.toLocaleString();
+            
+            if (currentStep >= steps) {
+                element.textContent = targetValue.toLocaleString();
+                clearInterval(timer);
+            }
+        }, duration / steps);
+    }
+
+    // Auto-refresh dashboard every 30 seconds
+    startAutoRefresh() {
+        setInterval(async () => {
+            await this.loadDashboardData();
+            await this.loadRecentActivities();
+        }, 30000); // 30 seconds
     }
 
     async loadRecentActivities() {
@@ -807,10 +842,69 @@ class PersonalManagementApp {
         }
     }
 
-    // Edit functions (placeholder implementations)
+    // Edit functions
     editTimetable(id) {
-        console.log('Edit timetable:', id);
-        alert('Edit functionality coming soon!');
+        // Find the timetable entry and populate the form
+        this.apiCall('/timetable').then(timetable => {
+            const exam = timetable.find(e => e.id === id);
+            if (exam) {
+                document.getElementById('moduleCode').value = exam.module_code;
+                document.getElementById('moduleName').value = exam.module_name;
+                document.getElementById('examDate').value = exam.exam_date;
+                document.getElementById('examTime').value = exam.exam_time;
+                document.getElementById('examVenue').value = exam.venue || '';
+                
+                // Change button to update mode
+                const addBtn = document.getElementById('addTimetableBtn');
+                addBtn.textContent = 'Update Exam';
+                addBtn.onclick = () => this.updateTimetable(id);
+                
+                // Scroll to form
+                document.getElementById('timetable').scrollIntoView({ behavior: 'smooth' });
+            }
+        }).catch(error => {
+            console.error('Failed to load timetable for editing:', error);
+            alert('Failed to load exam data for editing');
+        });
+    }
+
+    async updateTimetable(id) {
+        const moduleCode = document.getElementById('moduleCode').value.trim();
+        const moduleName = document.getElementById('moduleName').value.trim();
+        const examDate = document.getElementById('examDate').value;
+        const examTime = document.getElementById('examTime').value;
+        const examVenue = document.getElementById('examVenue').value.trim();
+
+        if (!moduleCode || !moduleName || !examDate || !examTime) {
+            alert('Please fill in all required fields');
+            return;
+        }
+
+        try {
+            await this.apiCall(`/timetable/${id}`, {
+                method: 'PUT',
+                body: JSON.stringify({
+                    moduleCode,
+                    moduleName,
+                    date: examDate,
+                    time: examTime,
+                    venue: examVenue
+                })
+            });
+
+            this.clearTimetableForm();
+            await this.loadTimetable();
+            await this.loadDashboardData();
+            this.showNotification('Exam Updated', `Updated ${moduleName} in timetable`);
+            
+            // Reset button to add mode
+            const addBtn = document.getElementById('addTimetableBtn');
+            addBtn.textContent = 'Add Exam';
+            addBtn.onclick = () => this.addTimetable();
+        } catch (error) {
+            console.error('Failed to update timetable:', error);
+            alert(`Failed to update exam: ${error.message}`);
+        }
     }
 
     editModule(id) {
@@ -838,10 +932,32 @@ class PersonalManagementApp {
         alert('Edit functionality coming soon!');
     }
 
-    // Complete functions
-    completeJourney(id) {
-        console.log('Complete journey:', id);
-        alert('Complete functionality coming soon!');
+    async completeAppointment(id) {
+        if (confirm('Are you sure you want to mark this appointment as completed?')) {
+            try {
+                await this.apiCall(`/appointments/${id}/complete`, { method: 'PUT' });
+                await this.loadAppointments();
+                await this.loadDashboardData();
+                this.showNotification('Appointment Completed', 'Appointment has been marked as completed');
+            } catch (error) {
+                console.error('Failed to complete appointment:', error);
+                alert(`Failed to complete appointment: ${error.message}`);
+            }
+        }
+    }
+
+    async markMoneyReturned(id) {
+        if (confirm('Are you sure you want to mark this money as returned?')) {
+            try {
+                await this.apiCall(`/money/${id}/return`, { method: 'PUT' });
+                await this.loadMoney();
+                await this.loadDashboardData();
+                this.showNotification('Money Returned', 'Money has been marked as returned');
+            } catch (error) {
+                console.error('Failed to mark money as returned:', error);
+                alert(`Failed to mark money as returned: ${error.message}`);
+            }
+        }
     }
 
     clearJourneyForm() {

@@ -244,14 +244,22 @@ class PersonalManagementApp {
             console.log(`✅ API Response:`, data);
 
             if (!response.ok) {
-                // Handle enhanced error responses
+                // Handle backend error responses
+                let errorMessage = 'Failed to add data. Please try again.';
+                
                 if (data.error) {
-                    const error = data.error;
-                    const errorMessage = `${error.message}\n\n🔧 Suggestion: ${error.suggestion}\n\n📊 Type: ${error.type} (${error.severity})`;
-                    throw new Error(errorMessage);
+                    // Use the actual error message from backend
+                    errorMessage = data.error;
+                    if (data.details) {
+                        errorMessage += `\n\nDetails: ${data.details}`;
+                    }
+                } else if (data.message) {
+                    errorMessage = data.message;
                 } else {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    errorMessage = `Server error: ${response.status} ${response.statusText}`;
                 }
+                
+                throw new Error(errorMessage);
             }
 
             // Handle success responses with enhanced format
@@ -368,7 +376,7 @@ class PersonalManagementApp {
             this.showNotification('Exam Added', `Added ${moduleName} to timetable`);
         } catch (error) {
             console.error('Failed to add timetable:', error);
-            alert('Failed to add exam. Please try again.');
+            alert(`Failed to add exam: ${error.message}`);
         }
     }
 
@@ -432,7 +440,7 @@ class PersonalManagementApp {
             this.showNotification('Marks Added', `Added ${marks} marks`);
         } catch (error) {
             console.error('Failed to add marks:', error);
-            alert('Failed to add marks. Please try again.');
+            alert(`Failed to add marks: ${error.message}`);
         }
     }
 
@@ -492,7 +500,7 @@ class PersonalManagementApp {
             this.showNotification('Money Record Added', `${personName} owes you ${parseFloat(amount).toLocaleString()} TZS`);
         } catch (error) {
             console.error('Failed to add money record:', error);
-            alert('Failed to add money record. Please try again.');
+            alert(`Failed to add money record: ${error.message}`);
         }
     }
 
@@ -551,7 +559,7 @@ class PersonalManagementApp {
             this.showNotification('Savings Added', `Added ${parseFloat(amount).toLocaleString()} TZS to NMB savings`);
         } catch (error) {
             console.error('Failed to add savings:', error);
-            alert('Failed to add savings. Please try again.');
+            alert(`Failed to add savings: ${error.message}`);
         }
     }
 
@@ -633,7 +641,7 @@ class PersonalManagementApp {
             this.showNotification('Module Added', `Added ${moduleCode} to your modules`);
         } catch (error) {
             console.error('Failed to add module:', error);
-            alert('Failed to add module. Please try again.');
+            alert(`Failed to add module: ${error.message}`);
         }
     }
 
@@ -709,7 +717,7 @@ class PersonalManagementApp {
             this.showNotification('Appointment Added', `Added ${name} on ${this.formatDate(date)} at ${time}`);
         } catch (error) {
             console.error('Failed to add appointment:', error);
-            alert('Failed to add appointment. Please try again.');
+            alert(`Failed to add appointment: ${error.message}`);
         }
     }
 
@@ -791,7 +799,7 @@ class PersonalManagementApp {
             this.showNotification('Journey Added', `Added journey to ${to} on ${this.formatDate(date)}`);
         } catch (error) {
             console.error('Failed to add journey:', error);
-            alert('Failed to add journey. Please try again.');
+            alert(`Failed to add journey: ${error.message}`);
         }
     }
 

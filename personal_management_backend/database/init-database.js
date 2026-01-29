@@ -53,8 +53,18 @@ async function retryDatabaseConnection(maxRetries = 5, delayMs = 3000) {
                 } else {
                     // It's just a hostname, use fallback method
                     console.log('🌐 Hostname detected, using fallback method...');
+                    
+                    // Check if Railway is giving us the wrong host, use correct one
+                    const correctHost = mysqlUrl.includes('mysql-production-271a.up.railway.app') 
+                        ? 'mysql.railway.internal' 
+                        : mysqlUrl;
+                    
+                    if (mysqlUrl.includes('mysql-production-271a.up.railway.app')) {
+                        console.log('🔧 Railway host detected, using correct internal host:', correctHost);
+                    }
+                    
                     connectionConfig = {
-                        host: mysqlUrl,
+                        host: correctHost,
                         user: process.env.RAILWAY_MYSQL_USER || process.env.MYSQLUSER || 'root',
                         password: process.env.RAILWAY_MYSQL_PASSWORD || process.env.MYSQLPASSWORD || '@nzali2006',
                         port: process.env.RAILWAY_MYSQL_PORT || process.env.MYSQLPORT || 3306,

@@ -10,9 +10,10 @@ function sleep(ms) {
 async function retryDatabaseConnection(maxRetries = 5, delayMs = 3000) {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
         try {
-            console.log(`� Database connection attempt ${attempt}/${maxRetries}...`);
+            console.log(`🔄 Database connection attempt ${attempt}/${maxRetries}...`);
             
-            const pool = mysql.createPool({
+            // Log all connection parameters (without password)
+            const connectionConfig = {
                 host: process.env.RAILWAY_PRIVATE_HOST || process.env.DB_HOST || 'localhost',
                 user: process.env.RAILWAY_MYSQL_USER || process.env.DB_USER || 'root',
                 password: process.env.RAILWAY_MYSQL_PASSWORD || process.env.DB_PASSWORD || '',
@@ -23,7 +24,22 @@ async function retryDatabaseConnection(maxRetries = 5, delayMs = 3000) {
                 } : (process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false),
                 connectTimeout: 10000,
                 charset: 'utf8mb4'
+            };
+            
+            console.log('🔧 Connection config:', {
+                host: connectionConfig.host,
+                user: connectionConfig.user,
+                password: connectionConfig.password ? '[SET]' : '[NOT SET]',
+                port: connectionConfig.port,
+                ssl: connectionConfig.ssl ? 'ENABLED' : 'DISABLED',
+                railwayEnv: process.env.RAILWAY_ENVIRONMENT ? 'YES' : 'NO',
+                railwayPrivateHost: process.env.RAILWAY_PRIVATE_HOST || 'NOT SET',
+                railwayUser: process.env.RAILWAY_MYSQL_USER || 'NOT SET',
+                railwayPassword: process.env.RAILWAY_MYSQL_PASSWORD ? '[SET]' : '[NOT SET]',
+                railwayPort: process.env.RAILWAY_MYSQL_PORT || 'NOT SET'
             });
+            
+            const pool = mysql.createPool(connectionConfig);
 
             // Test connection
             const connection = await pool.getConnection();
@@ -33,7 +49,14 @@ async function retryDatabaseConnection(maxRetries = 5, delayMs = 3000) {
             return pool;
             
         } catch (error) {
-            console.error(`❌ Attempt ${attempt} failed:`, error.message);
+            console.error(`❌ Attempt ${attempt} failed:`, {
+                message: error.message,
+                code: error.code,
+                errno: error.errno,
+                sqlState: error.sqlState,
+                sqlMessage: error.sqlMessage,
+                stack: error.stack
+            });
             
             if (attempt === maxRetries) {
                 throw error;

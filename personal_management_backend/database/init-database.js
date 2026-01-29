@@ -126,19 +126,36 @@ async function retryDatabaseConnection(maxRetries = 5, delayMs = 3000) {
                     console.log('✅ Using hostname with credentials');
                 }
             } else {
-                // Fallback to hardcoded Railway MySQL URL since environment variables aren't working
-                console.log('🌐 Using hardcoded Railway MySQL URL...');
-                connectionConfig = {
-                    host: 'mysql.railway.internal',
-                    user: 'chrispin',
-                    password: 'ELgFXlNvQaWYcgqOjqRHrHrRxwGhnKMn',
-                    port: 3306,
-                    database: 'database',
-                    ssl: { rejectUnauthorized: false },
-                    connectTimeout: 10000,
-                    charset: 'utf8mb4'
-                };
-                console.log('✅ Using hardcoded Railway credentials');
+                // Use the complete Railway MySQL URL
+                console.log('🌐 Using complete Railway MySQL URL...');
+                const mysqlUrl = 'mysql://chrispin:ELgFXlNvQaWYcgqOjqRHrHrRxwGhnKMn@mysql.railway.internal:3306/database';
+                
+                try {
+                    // Parse mysql://user:password@host:port/database
+                    const urlPattern = /^mysql:\/\/([^:]+):([^@]+)@([^:]+):(\d+)\/(.+)$/;
+                    const match = mysqlUrl.match(urlPattern);
+                    
+                    if (match) {
+                        connectionConfig = {
+                            host: match[3],
+                            user: match[1],
+                            password: match[2],
+                            port: parseInt(match[4]),
+                            database: match[5],
+                            ssl: { rejectUnauthorized: false },
+                            connectTimeout: 10000,
+                            charset: 'utf8mb4'
+                        };
+                        console.log('✅ Successfully parsed Railway MySQL URL');
+                        console.log('🔧 Using host:', match[3]);
+                        console.log('👤 Using user:', match[1]);
+                    } else {
+                        throw new Error('Invalid MySQL URL format');
+                    }
+                } catch (parseError) {
+                    console.error('❌ Failed to parse MySQL URL:', parseError.message);
+                    throw parseError;
+                }
             }
             
             console.log('🔧 Connection config:', {

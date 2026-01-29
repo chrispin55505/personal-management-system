@@ -74,6 +74,13 @@ async function retryDatabaseConnection(maxRetries = 5, delayMs = 3000) {
             // Test connection
             const connection = await pool.getConnection();
             console.log('✅ Database connection established!');
+            console.log('🔍 Connection details:', {
+                host: connection.config.host,
+                user: connection.config.user,
+                database: connection.config.database,
+                port: connection.config.port,
+                ssl: connection.config.ssl ? 'ENABLED' : 'DISABLED'
+            });
             connection.release();
             
             return pool;

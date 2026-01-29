@@ -25,7 +25,7 @@ async function retryDatabaseConnection(maxRetries = 5, delayMs = 3000) {
                 connectionConfig = {
                     host: mysqlHost,
                     user: process.env.RAILWAY_MYSQL_USER || process.env.MYSQLUSER || 'root',
-                    password: process.env.RAILWAY_MYSQL_PASSWORD || process.env.MYSQLPASSWORD || '',
+                    password: process.env.RAILWAY_MYSQL_PASSWORD || process.env.MYSQLPASSWORD || '@nzali2006',
                     port: process.env.RAILWAY_MYSQL_PORT || process.env.MYSQLPORT || 3306,
                     database: process.env.RAILWAY_MYSQL_DATABASE_NAME || process.env.MYSQL_DATABASE || 'railway',
                     ssl: { rejectUnauthorized: false },
@@ -38,7 +38,7 @@ async function retryDatabaseConnection(maxRetries = 5, delayMs = 3000) {
                 connectionConfig = {
                     host: process.env.RAILWAY_PRIVATE_HOST || process.env.DB_HOST || 'localhost',
                     user: process.env.RAILWAY_MYSQL_USER || process.env.DB_USER || 'root',
-                    password: process.env.RAILWAY_MYSQL_PASSWORD || process.env.DB_PASSWORD || '',
+                    password: process.env.RAILWAY_MYSQL_PASSWORD || process.env.DB_PASSWORD || '@nzali2006',
                     port: process.env.RAILWAY_MYSQL_PORT || process.env.DB_PORT || 3306,
                     ssl: process.env.RAILWAY_ENVIRONMENT ? { 
                         rejectUnauthorized: false,

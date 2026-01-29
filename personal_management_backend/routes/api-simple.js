@@ -338,6 +338,42 @@ router.post('/modules', async (req, res) => {
     }
 });
 
+router.put('/modules/:id', async (req, res) => {
+    try {
+        const { pool } = require('../config/database-simple');
+        const id = req.params.id;
+        const { code, name, lecturer, semester, year } = req.body;
+        
+        console.log('📚 Updating module:', { id, code, name, lecturer, semester, year });
+        
+        // Validate required fields
+        if (!code || !name) {
+            return res.status(400).json({ 
+                error: 'Missing required fields',
+                required: ['code', 'name']
+            });
+        }
+        
+        const [result] = await pool.query(
+            'UPDATE modules SET code = ?, name = ?, lecturer = ?, semester = ?, year = ? WHERE id = ?',
+            [code, name, lecturer || '', semester || 1, year || 1, id]
+        );
+        
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'Module not found' });
+        }
+        
+        console.log(`✅ Module ${id} updated`);
+        res.json({ success: true, message: 'Module updated successfully' });
+    } catch (error) {
+        console.error('❌ Module update error:', error);
+        res.status(500).json({ 
+            error: 'Failed to update module',
+            details: error.message 
+        });
+    }
+});
+
 router.post('/money', async (req, res) => {
     try {
         const { pool } = require('../config/database-simple');
@@ -395,12 +431,23 @@ router.post('/appointments', async (req, res) => {
             message: 'Appointment added successfully' 
         });
     } catch (error) {
-        console.error('❌ Appointment insert error:', error);
-        return sendApiResponse(res, false, null, error);
     }
 });
 
-// Journeys endpoints
+// Money endpoints
+router.get('/money', async (req, res) => {
+    try {
+        const { pool } = require('../config/database-simple');
+        console.log('💰 Loading money records...');
+        const [rows] = await pool.query('SELECT * FROM money_records ORDER BY borrow_date');
+        console.log(`✅ Loaded ${rows.length} money records`);
+        res.json(rows);
+    } catch (error) {
+        console.error('❌ Money load error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 router.get('/journeys', async (req, res) => {
     try {
         const { pool } = require('../config/database-simple');
@@ -490,6 +537,90 @@ router.post('/savings', async (req, res) => {
             error: 'Failed to add savings record',
             details: error.message 
         });
+    }
+});
+
+router.delete('/money/:id', async (req, res) => {
+    try {
+        const { pool } = require('../config/database-simple');
+        const id = req.params.id;
+        
+        console.log(`🗑️ Deleting money record ID: ${id}`);
+        
+        const [result] = await pool.query('DELETE FROM money_records WHERE id = ?', [id]);
+        
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'Money record not found' });
+        }
+        
+        console.log(`✅ Money record ${id} deleted`);
+        res.json({ success: true, message: 'Money record deleted successfully' });
+    } catch (error) {
+        console.error('❌ Money delete error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+router.delete('/modules/:id', async (req, res) => {
+    try {
+        const { pool } = require('../config/database-simple');
+        const id = req.params.id;
+        
+        console.log(`🗑️ Deleting module ID: ${id}`);
+        
+        const [result] = await pool.query('DELETE FROM modules WHERE id = ?', [id]);
+        
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'Module not found' });
+        }
+        
+        console.log(`✅ Module ${id} deleted`);
+        res.json({ success: true, message: 'Module deleted successfully' });
+    } catch (error) {
+        console.error('❌ Module delete error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+router.delete('/appointments/:id', async (req, res) => {
+    try {
+        const { pool } = require('../config/database-simple');
+        const id = req.params.id;
+        
+        console.log(`🗑️ Deleting appointment ID: ${id}`);
+        
+        const [result] = await pool.query('DELETE FROM appointments WHERE id = ?', [id]);
+        
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'Appointment not found' });
+        }
+        
+        console.log(`✅ Appointment ${id} deleted`);
+        res.json({ success: true, message: 'Appointment deleted successfully' });
+    } catch (error) {
+        console.error('❌ Appointment delete error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+router.delete('/journeys/:id', async (req, res) => {
+    try {
+        const { pool } = require('../config/database-simple');
+        const id = req.params.id;
+        
+        console.log(`🗑️ Deleting journey ID: ${id}`);
+        
+        const [result] = await pool.query('DELETE FROM journeys WHERE id = ?', [id]);
+        
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'Journey not found' });
+        }
+        
+        console.log(`✅ Journey ${id} deleted`);
+        res.json({ success: true, message: 'Journey deleted successfully' });
+    } catch (error) {
+        console.error('❌ Journey delete error:', error);
+        res.status(500).json({ error: error.message });
     }
 });
 

@@ -908,8 +908,67 @@ class PersonalManagementApp {
     }
 
     editModule(id) {
-        console.log('Edit module:', id);
-        alert('Edit functionality coming soon!');
+        // Find the module and populate the form
+        this.apiCall('/modules').then(modules => {
+            const module = modules.find(m => m.id === id);
+            if (module) {
+                document.getElementById('moduleCode').value = module.code;
+                document.getElementById('moduleName').value = module.name;
+                document.getElementById('lecturerName').value = module.lecturer || '';
+                document.getElementById('semester').value = module.semester || 1;
+                document.getElementById('year').value = module.year || 1;
+                
+                // Change button to update mode
+                const addBtn = document.getElementById('addModuleBtn');
+                addBtn.textContent = 'Update Module';
+                addBtn.onclick = () => this.updateModule(id);
+                
+                // Scroll to form
+                document.getElementById('modules').scrollIntoView({ behavior: 'smooth' });
+            }
+        }).catch(error => {
+            console.error('Failed to load module for editing:', error);
+            alert('Failed to load module data for editing');
+        });
+    }
+
+    async updateModule(id) {
+        const code = document.getElementById('moduleCode').value.trim();
+        const name = document.getElementById('moduleName').value.trim();
+        const lecturer = document.getElementById('lecturerName').value.trim();
+        const semester = document.getElementById('semester').value;
+        const year = document.getElementById('year').value;
+
+        if (!code || !name) {
+            alert('Please fill in module code and name');
+            return;
+        }
+
+        try {
+            await this.apiCall(`/modules/${id}`, {
+                method: 'PUT',
+                body: JSON.stringify({
+                    code,
+                    name,
+                    lecturer,
+                    semester: parseInt(semester),
+                    year: parseInt(year)
+                })
+            });
+
+            this.clearModuleForm();
+            await this.loadModules();
+            await this.loadDashboardData();
+            this.showNotification('Module Updated', `Updated ${name} module`);
+            
+            // Reset button to add mode
+            const addBtn = document.getElementById('addModuleBtn');
+            addBtn.textContent = 'Add Module';
+            addBtn.onclick = () => this.addModule();
+        } catch (error) {
+            console.error('Failed to update module:', error);
+            alert(`Failed to update module: ${error.message}`);
+        }
     }
 
     editMoney(id) {

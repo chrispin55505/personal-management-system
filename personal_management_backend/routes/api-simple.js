@@ -588,7 +588,7 @@ router.post('/savings', async (req, res) => {
         }
         
         const [result] = await pool.query(
-            'INSERT INTO savings (amount, savings_date, user_id) VALUES (?, ?, ?)',
+            'INSERT INTO savings (amount, date, user_id) VALUES (?, ?, ?)',
             [parseFloat(amount), date, 1]
         );
         

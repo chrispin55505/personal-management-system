@@ -105,9 +105,6 @@ class PersonalManagementApp {
                     case 'delete-journey':
                         this.deleteJourney(parseInt(id));
                         break;
-                    case 'complete-journey':
-                        this.completeJourney(parseInt(id));
-                        break;
                     case 'edit-savings':
                         this.editSavings(parseInt(id));
                         break;
@@ -975,17 +972,46 @@ class PersonalManagementApp {
                     <td>${transportCost.toLocaleString()} TZS</td>
                     <td>${foodCost.toLocaleString()} TZS</td>
                     <td>${totalCost.toLocaleString()} TZS</td>
-                    <td><span class="status status-${journey.status || 'pending'}">${journey.status || 'pending'}</span></td>
+                    <td>
+                        <select class="status-select status-${journey.status || 'pending'}" data-journey-id="${journey.id}" onchange="app.updateJourneyStatus(${journey.id}, this.value)">
+                            <option value="pending" ${journey.status === 'pending' ? 'selected' : ''}>Pending</option>
+                            <option value="completed" ${journey.status === 'completed' ? 'selected' : ''}>Completed</option>
+                            <option value="cancelled" ${journey.status === 'cancelled' ? 'selected' : ''}>Cancelled</option>
+                        </select>
+                    </td>
                     <td>
                         <button class="action-btn edit-btn" data-id="${journey.id}" data-action="edit-journey"><i class="fas fa-edit"></i></button>
                         <button class="action-btn delete-btn" data-id="${journey.id}" data-action="delete-journey"><i class="fas fa-trash"></i></button>
-                        <button class="action-btn" style="background-color: var(--success); color: white;" data-id="${journey.id}" data-action="complete-journey"><i class="fas fa-check"></i></button>
                     </td>
                 `;
                 tbody.appendChild(row);
             });
         } catch (error) {
             console.error('Failed to load journeys:', error);
+        }
+    }
+
+    async updateJourneyStatus(id, newStatus) {
+        try {
+            await this.apiCall(`/journeys/${id}/status`, {
+                method: 'PUT',
+                body: JSON.stringify({ status: newStatus })
+            });
+            
+            // Update the select dropdown styling based on status
+            const statusSelect = document.querySelector(`select[data-journey-id="${id}"]`);
+            if (statusSelect) {
+                statusSelect.className = `status-select status-${newStatus}`;
+            }
+            
+            // Reload journeys to refresh the table
+            await this.loadJourneys();
+            await this.loadDashboardData();
+            
+            this.showNotification('Journey Status Updated', `Journey marked as ${newStatus}`);
+        } catch (error) {
+            console.error('Failed to update journey status:', error);
+            alert(`Failed to update journey status: ${error.message}`);
         }
     }
 
@@ -1449,56 +1475,6 @@ class PersonalManagementApp {
                 console.error('Failed to delete journey:', error);
                 alert('Failed to delete journey. Please try again.');
             }
-        }
-    }
-
-    async completeJourney(id) {
-        const statusOptions = ['pending', 'completed', 'cancelled'];
-        const currentStatus = await this.getCurrentJourneyStatus(id);
-        
-        // Create status selection dialog
-        const statusOptionsHtml = statusOptions.map(status => 
-            `<option value="${status}" ${status === currentStatus ? 'selected' : ''}>${status.charAt(0).toUpperCase() + status.slice(1)}</option>`
-        ).join('');
-        
-        const confirmed = confirm(`Update journey status?\n\nCurrent status: ${currentStatus}\n\nClick OK to change status, or Cancel to keep current status.`);
-        
-        if (confirmed) {
-            // Show simple prompt for status selection
-            const newStatus = prompt(`Select new status for journey:\n\n1. pending\n2. completed\n3. cancelled\n\nEnter number (1-3):`, '1');
-            
-            let selectedStatus;
-            switch (newStatus) {
-                case '1': selectedStatus = 'pending'; break;
-                case '2': selectedStatus = 'completed'; break;
-                case '3': selectedStatus = 'cancelled'; break;
-                default: selectedStatus = currentStatus; break;
-            }
-            
-            if (selectedStatus !== currentStatus) {
-                try {
-                    await this.apiCall(`/journeys/${id}/status`, {
-                        method: 'PUT',
-                        body: JSON.stringify({ status: selectedStatus })
-                    });
-                    await this.loadJourneys();
-                    await this.loadDashboardData();
-                    this.showNotification('Journey Status Updated', `Journey marked as ${selectedStatus}`);
-                } catch (error) {
-                    console.error('Failed to update journey status:', error);
-                    alert('Failed to update journey status. Please try again.');
-                }
-            }
-        }
-    }
-
-    async getCurrentJourneyStatus(id) {
-        try {
-            const journeys = await this.apiCall('/journeys');
-            const journey = journeys.find(j => j.id === id);
-            return journey ? (journey.status || 'pending') : 'pending';
-        } catch (error) {
-            return 'pending';
         }
     }
 }

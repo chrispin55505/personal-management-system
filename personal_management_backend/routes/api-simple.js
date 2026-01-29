@@ -1,13 +1,138 @@
+// Enhanced error detection middleware
+function detectDatabaseError(error) {
+    const errorPatterns = {
+        'connection': [
+            'ECONNREFUSED',
+            'ENOTFOUND',
+            'ETIMEDOUT',
+            'connect',
+            'connection',
+            'timeout'
+        ],
+        'authentication': [
+            'access denied',
+            'authentication',
+            'login',
+            'password',
+            'credentials'
+        ],
+        'table_missing': [
+            "doesn't exist",
+            'Unknown table',
+            'Table',
+            "doesn't exist"
+        ],
+        'column_missing': [
+            "Unknown column",
+            'column',
+            "field"
+        ],
+        'constraint': [
+            'constraint',
+            'duplicate',
+            'unique',
+            'foreign key',
+            'ER_DUP_ENTRY'
+        ],
+        'syntax': [
+            'syntax error',
+            'SQL syntax',
+            'near'
+        ],
+        'data_type': [
+            'incorrect',
+            'invalid',
+            'conversion',
+            'type'
+        ]
+    };
+
+    const errorMessage = error.message.toLowerCase();
+    const errorCode = error.code || '';
+    
+    for (const [type, patterns] of Object.entries(errorPatterns)) {
+        for (const pattern of patterns) {
+            if (errorMessage.includes(pattern.toLowerCase()) || errorCode.includes(pattern)) {
+                return {
+                    type,
+                    severity: type === 'connection' ? 'critical' : type === 'authentication' ? 'high' : 'medium',
+                    message: getErrorMessage(type, error),
+                    suggestion: getSuggestion(type, error)
+                };
+            }
+        }
+    }
+    
+    return {
+        type: 'unknown',
+        severity: 'medium',
+        message: 'Unknown database error occurred',
+        suggestion: 'Check Railway logs for detailed error information'
+    };
+}
+
+function getErrorMessage(type, error) {
+    const messages = {
+        'connection': `Database connection failed: ${error.message}`,
+        'authentication': `Database authentication failed: ${error.message}`,
+        'table_missing': `Required table doesn't exist: ${error.message}`,
+        'column_missing': `Required column doesn't exist: ${error.message}`,
+        'constraint': `Database constraint violation: ${error.message}`,
+        'syntax': `SQL syntax error: ${error.message}`,
+        'data_type': `Data type mismatch: ${error.message}`
+    };
+    return messages[type] || error.message;
+}
+
+function getSuggestion(type, error) {
+    const suggestions = {
+        'connection': 'Check Railway MySQL service status and connection settings',
+        'authentication': 'Verify database credentials in Railway environment variables',
+        'table_missing': 'Run the database schema setup script in Railway MySQL Query tab',
+        'column_missing': 'Update database schema to match application requirements',
+        'constraint': 'Check for duplicate data or foreign key constraints',
+        'syntax': 'Review SQL query syntax and table structure',
+        'data_type': 'Ensure data types match between application and database schema'
+    };
+    return suggestions[type] || 'Contact support with error details';
+}
+
+// Enhanced API response helper
+function sendApiResponse(res, success, data, error = null) {
+    if (success) {
+        return res.json({
+            success: true,
+            data,
+            timestamp: new Date().toISOString(),
+            message: data.message || 'Operation completed successfully'
+        });
+    } else {
+        const detectedError = error ? detectDatabaseError(error) : {
+            type: 'unknown',
+            severity: 'medium',
+            message: 'Operation failed',
+            suggestion: 'Try again or contact support'
+        };
+
+        return res.status(error && error.status || 500).json({
+            success: false,
+            error: {
+                type: detectedError.type,
+                severity: detectedError.severity,
+                message: detectedError.message,
+                suggestion: detectedError.suggestion,
+                original: error ? error.message : 'Unknown error',
+                timestamp: new Date().toISOString()
+            }
+        });
+    }
+}
+
 const express = require('express');
 const router = express.Router();
 
 // Import simplified controllers
 const authController = require('../controllers/authController-simple');
-
-// Authentication routes
-router.post('/auth/login', authController.login);
-router.post('/auth/logout', authController.logout);
-router.get('/auth/status', authController.checkAuth);
 
 // Simple dashboard stats
 router.get('/dashboard/stats', async (req, res) => {
@@ -59,13 +184,10 @@ router.get('/dashboard/stats', async (req, res) => {
         };
         
         console.log('✅ Dashboard stats loaded successfully:', stats);
-        res.json(stats);
+        return sendApiResponse(res, true, stats);
     } catch (error) {
         console.error('❌ Dashboard stats error:', error);
-        res.status(500).json({ 
-            error: 'Failed to load dashboard stats',
-            details: error.message 
-        });
+        return sendApiResponse(res, false, null, error);
     }
 });
 
@@ -158,10 +280,10 @@ router.post('/modules', async (req, res) => {
         
         // Validate required fields
         if (!code || !name) {
-            return res.status(400).json({ 
-                error: 'Missing required fields',
-                required: ['code', 'name']
-            });
+            const validationError = new Error('Missing required fields');
+            validationError.status = 400;
+            validationError.required = ['code', 'name'];
+            throw validationError;
         }
         
         const [result] = await pool.execute(
@@ -170,52 +292,13 @@ router.post('/modules', async (req, res) => {
         );
         
         console.log(`✅ Module added with ID: ${result.insertId}`);
-        res.json({ id: result.insertId, success: true, message: 'Module added successfully' });
+        return sendApiResponse(res, true, { 
+            id: result.insertId, 
+            message: 'Module added successfully' 
+        });
     } catch (error) {
         console.error('❌ Module insert error:', error);
-        if (error.code === 'ER_DUP_ENTRY') {
-            res.status(409).json({ error: 'Module code already exists' });
-        } else {
-            res.status(500).json({ 
-                error: 'Failed to add module',
-                details: error.message 
-            });
-        }
-    }
-});
-
-router.delete('/modules/:id', async (req, res) => {
-    try {
-        const { pool } = require('../config/database-simple');
-        const id = req.params.id;
-        
-        console.log(`🗑️ Deleting module ID: ${id}`);
-        
-        const [result] = await pool.execute('DELETE FROM modules WHERE id = ?', [id]);
-        
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ error: 'Module not found' });
-        }
-        
-        console.log(`✅ Module ${id} deleted`);
-        res.json({ success: true, message: 'Module deleted successfully' });
-    } catch (error) {
-        console.error('❌ Module delete error:', error);
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// Money records endpoints
-router.get('/money', async (req, res) => {
-    try {
-        const { pool } = require('../config/database-simple');
-        console.log('💰 Loading money records...');
-        const [rows] = await pool.execute('SELECT * FROM money_records ORDER BY borrow_date DESC');
-        console.log(`✅ Loaded ${rows.length} money records`);
-        res.json(rows);
-    } catch (error) {
-        console.error('❌ Money records load error:', error);
-        res.status(500).json({ error: error.message });
+        return sendApiResponse(res, false, null, error);
     }
 });
 
@@ -228,10 +311,10 @@ router.post('/money', async (req, res) => {
         
         // Validate required fields
         if (!person || !amount || !borrowDate) {
-            return res.status(400).json({ 
-                error: 'Missing required fields',
-                required: ['person', 'amount', 'borrowDate']
-            });
+            const validationError = new Error('Missing required fields');
+            validationError.status = 400;
+            validationError.required = ['person', 'amount', 'borrowDate'];
+            throw validationError;
         }
         
         const [result] = await pool.execute(
@@ -240,27 +323,13 @@ router.post('/money', async (req, res) => {
         );
         
         console.log(`✅ Money record added with ID: ${result.insertId}`);
-        res.json({ id: result.insertId, success: true, message: 'Money record added successfully' });
+        return sendApiResponse(res, true, { 
+            id: result.insertId, 
+            message: 'Money record added successfully' 
+        });
     } catch (error) {
         console.error('❌ Money insert error:', error);
-        res.status(500).json({ 
-            error: 'Failed to add money record',
-            details: error.message 
-        });
-    }
-});
-
-// Appointments endpoints
-router.get('/appointments', async (req, res) => {
-    try {
-        const { pool } = require('../config/database-simple');
-        console.log('📅 Loading appointments...');
-        const [rows] = await pool.execute('SELECT * FROM appointments ORDER BY appointment_date');
-        console.log(`✅ Loaded ${rows.length} appointments`);
-        res.json(rows);
-    } catch (error) {
-        console.error('❌ Appointments load error:', error);
-        res.status(500).json({ error: error.message });
+        return sendApiResponse(res, false, null, error);
     }
 });
 
@@ -273,10 +342,10 @@ router.post('/appointments', async (req, res) => {
         
         // Validate required fields
         if (!name || !date || !time) {
-            return res.status(400).json({ 
-                error: 'Missing required fields',
-                required: ['name', 'date', 'time']
-            });
+            const validationError = new Error('Missing required fields');
+            validationError.status = 400;
+            validationError.required = ['name', 'date', 'time'];
+            throw validationError;
         }
         
         const [result] = await pool.execute(
@@ -285,13 +354,13 @@ router.post('/appointments', async (req, res) => {
         );
         
         console.log(`✅ Appointment added with ID: ${result.insertId}`);
-        res.json({ id: result.insertId, success: true, message: 'Appointment added successfully' });
+        return sendApiResponse(res, true, { 
+            id: result.insertId, 
+            message: 'Appointment added successfully' 
+        });
     } catch (error) {
         console.error('❌ Appointment insert error:', error);
-        res.status(500).json({ 
-            error: 'Failed to add appointment',
-            details: error.message 
-        });
+        return sendApiResponse(res, false, null, error);
     }
 });
 

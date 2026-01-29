@@ -240,14 +240,25 @@ class PersonalManagementApp {
 
             console.log(`📡 Response status: ${response.status}`);
 
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.error(`❌ API Error (${response.status}):`, errorText);
-                throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
-            }
-
             const data = await response.json();
             console.log(`✅ API Response:`, data);
+
+            if (!response.ok) {
+                // Handle enhanced error responses
+                if (data.error) {
+                    const error = data.error;
+                    const errorMessage = `${error.message}\n\n🔧 Suggestion: ${error.suggestion}\n\n📊 Type: ${error.type} (${error.severity})`;
+                    throw new Error(errorMessage);
+                } else {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+            }
+
+            // Handle success responses with enhanced format
+            if (data.success && data.data) {
+                return data.data;
+            }
+            
             return data;
         } catch (error) {
             console.error('❌ API call failed:', error);

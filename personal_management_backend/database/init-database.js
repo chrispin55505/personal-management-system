@@ -16,9 +16,8 @@ async function initializeDatabase() {
                 mode: 'REQUIRED'
             } : (process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false),
             connectTimeout: 10000,
-            acquireTimeout: 10000,
-            reconnect: true,
             charset: 'utf8mb4'
+            // Removed invalid options: acquireTimeout, reconnect
         });
 
         console.log('🔧 Initializing database...');

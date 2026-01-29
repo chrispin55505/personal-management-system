@@ -11,7 +11,8 @@ const dbConfig = {
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0,
-    ssl: process.env.RAILWAY_ENVIRONMENT ? { rejectUnauthorized: false } : false
+    ssl: process.env.RAILWAY_ENVIRONMENT ? { rejectUnauthorized: false } : false,
+    // Removed invalid options: acquireTimeout, reconnect
 };
 
 const pool = mysql.createPool(dbConfig);

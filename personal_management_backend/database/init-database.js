@@ -13,36 +13,64 @@ async function retryDatabaseConnection(maxRetries = 5, delayMs = 3000) {
             console.log(`🔄 Database connection attempt ${attempt}/${maxRetries}...`);
             
             // Log all connection parameters (without password)
-            const connectionConfig = {
-                host: process.env.RAILWAY_PRIVATE_HOST || process.env.DB_HOST || 'localhost',
-                user: process.env.RAILWAY_MYSQL_USER || process.env.DB_USER || 'root',
-                password: process.env.RAILWAY_MYSQL_PASSWORD || process.env.DB_PASSWORD || '',
-                port: process.env.RAILWAY_MYSQL_PORT || process.env.DB_PORT || 3306,
-                ssl: process.env.RAILWAY_ENVIRONMENT ? { 
-                    rejectUnauthorized: false,
-                    mode: 'REQUIRED'
-                } : (process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false),
-                connectTimeout: 10000,
-                charset: 'utf8mb4'
-            };
+            let connectionConfig;
+            
+            // Try to parse Railway MySQL URL first
+            if (process.env.RAILWAY_SERVICE_MYSQL_URL) {
+                console.log('🔗 Found RAILWAY_SERVICE_MYSQL_URL, parsing...');
+                const mysqlUrl = process.env.RAILWAY_SERVICE_MYSQL_URL;
+                console.log('🌐 MySQL URL:', mysqlUrl.replace(/:([^:@]+)@/, ':***@')); // Hide password
+                
+                try {
+                    // Parse mysql://user:password@host:port/database
+                    const urlPattern = /^mysql:\/\/([^:]+):([^@]+)@([^:]+):(\d+)\/(.+)$/;
+                    const match = mysqlUrl.match(urlPattern);
+                    
+                    if (match) {
+                        connectionConfig = {
+                            host: match[3],
+                            user: match[1],
+                            password: match[2],
+                            port: parseInt(match[4]),
+                            database: match[5],
+                            ssl: { rejectUnauthorized: false },
+                            connectTimeout: 10000,
+                            charset: 'utf8mb4'
+                        };
+                        console.log('✅ Successfully parsed MySQL URL');
+                    } else {
+                        throw new Error('Invalid MySQL URL format');
+                    }
+                } catch (parseError) {
+                    console.error('❌ Failed to parse MySQL URL:', parseError.message);
+                    throw parseError;
+                }
+            } else {
+                // Fallback to individual environment variables
+                connectionConfig = {
+                    host: process.env.RAILWAY_PRIVATE_HOST || process.env.DB_HOST || 'localhost',
+                    user: process.env.RAILWAY_MYSQL_USER || process.env.DB_USER || 'root',
+                    password: process.env.RAILWAY_MYSQL_PASSWORD || process.env.DB_PASSWORD || '',
+                    port: process.env.RAILWAY_MYSQL_PORT || process.env.DB_PORT || 3306,
+                    ssl: process.env.RAILWAY_ENVIRONMENT ? { 
+                        rejectUnauthorized: false,
+                        mode: 'REQUIRED'
+                    } : (process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false),
+                    connectTimeout: 10000,
+                    charset: 'utf8mb4'
+                };
+            }
             
             console.log('🔧 Connection config:', {
                 host: connectionConfig.host,
                 user: connectionConfig.user,
                 password: connectionConfig.password ? '[SET]' : '[NOT SET]',
                 port: connectionConfig.port,
+                database: connectionConfig.database || 'railway',
                 ssl: connectionConfig.ssl ? 'ENABLED' : 'DISABLED',
                 railwayEnv: process.env.RAILWAY_ENVIRONMENT ? 'YES' : 'NO',
-                railwayPrivateHost: process.env.RAILWAY_PRIVATE_HOST || 'NOT SET',
-                railwayUser: process.env.RAILWAY_MYSQL_USER || 'NOT SET',
-                railwayPassword: process.env.RAILWAY_MYSQL_PASSWORD ? '[SET]' : '[NOT SET]',
-                railwayPort: process.env.RAILWAY_MYSQL_PORT || 'NOT SET',
-                allEnvVars: Object.keys(process.env).filter(key => key.includes('RAILWAY') || key.includes('MYSQL') || key.includes('DB')),
-                mysqlUrl: process.env.MYSQL_URL || 'NOT SET',
-                mysqlUser: process.env.MYSQLUSER || 'NOT SET',
-                mysqlPassword: process.env.MYSQLPASSWORD ? '[SET]' : '[NOT SET]',
-                mysqlHost: process.env.MYSQLHOST || 'NOT SET',
-                mysqlPort: process.env.MYSQLPORT || 'NOT SET'
+                railwayMysqlUrl: process.env.RAILWAY_SERVICE_MYSQL_URL ? '[SET]' : '[NOT SET]',
+                allEnvVars: Object.keys(process.env).filter(key => key.includes('RAILWAY') || key.includes('MYSQL') || key.includes('DB'))
             });
             
             const pool = mysql.createPool(connectionConfig);
@@ -93,10 +121,20 @@ async function initializeDatabase() {
         pool = await retryDatabaseConnection(5, 3000);
 
         // Create database if not exists
-        const dbName = process.env.RAILWAY_MYSQL_DATABASE_NAME || process.env.DB_NAME || 'railway';
-        console.log(`📁 Creating/using database: ${dbName}`);
-        await pool.execute(`CREATE DATABASE IF NOT EXISTS ${dbName}`);
-        await pool.execute(`USE ${dbName}`);
+        let dbName;
+        if (pool && pool.config && pool.config.database) {
+            dbName = pool.config.database;
+        } else {
+            dbName = process.env.RAILWAY_MYSQL_DATABASE_NAME || process.env.DB_NAME || 'railway';
+        }
+        
+        console.log(`📁 Using database: ${dbName}`);
+        
+        // Don't try to create database if we're using the one from Railway URL
+        if (!process.env.RAILWAY_SERVICE_MYSQL_URL) {
+            await pool.execute(`CREATE DATABASE IF NOT EXISTS ${dbName}`);
+            await pool.execute(`USE ${dbName}`);
+        }
 
         // Create tables
         const tables = [

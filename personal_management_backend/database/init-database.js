@@ -16,8 +16,8 @@ async function retryDatabaseConnection(maxRetries = 5, delayMs = 3000) {
             let connectionConfig;
             
             // Try to parse Railway MySQL URL first (using correct variable names)
-            if (process.env.MYSQL_URL || process.env.DATABASE_URL) {
-                const mysqlUrl = process.env.MYSQL_URL || process.env.DATABASE_URL;
+            if (process.env.MYSQL_URL && process.env.MYSQL_URL !== '${{MySQL.MYSQL_URL}}') {
+                const mysqlUrl = process.env.MYSQL_URL;
                 console.log('🔗 Found MYSQL_URL:', mysqlUrl ? '[SET]' : 'NOT SET');
                 console.log('🔗 Found DATABASE_URL:', process.env.DATABASE_URL ? '[SET]' : 'NOT SET');
                 
@@ -66,12 +66,12 @@ async function retryDatabaseConnection(maxRetries = 5, delayMs = 3000) {
                     };
                     console.log('✅ Using Railway environment variables');
                 }
-            } else if (process.env.RAILWAY_SERVICE_MYSQL_URL) {
-                const mysqlUrl = process.env.RAILWAY_SERVICE_MYSQL_URL;
-                console.log('🔗 Found RAILWAY_SERVICE_MYSQL_URL:', mysqlUrl);
+            } else if (process.env.DATABASE_URL && process.env.DATABASE_URL !== '${{MySQL.MYSQL_URL}}') {
+                const mysqlUrl = process.env.DATABASE_URL;
+                console.log('🔗 Found DATABASE_URL:', mysqlUrl ? '[SET]' : 'NOT SET');
                 
                 // Check if it's a full URL or just a hostname
-                if (mysqlUrl.startsWith('mysql://')) {
+                if (mysqlUrl && mysqlUrl.startsWith('mysql://')) {
                     console.log('🌐 Full MySQL URL detected, parsing...');
                     console.log('🌐 MySQL URL:', mysqlUrl.replace(/:([^:@]+)@/, ':***@')); // Hide password
                     

@@ -1272,10 +1272,10 @@ class PersonalManagementApp {
         this.apiCall('/journeys').then(journeys => {
             const journey = journeys.find(j => j.id === id);
             if (journey) {
-                document.getElementById('from').value = journey.journey_from;
-                document.getElementById('to').value = journey.journey_to;
-                document.getElementById('date').value = journey.journey_date;
-                document.getElementById('time').value = journey.journey_time || '';
+                document.getElementById('journeyFrom').value = journey.journey_from;
+                document.getElementById('journeyTo').value = journey.journey_to;
+                document.getElementById('journeyDate').value = journey.journey_date;
+                document.getElementById('journeyTime').value = journey.journey_time || '';
                 document.getElementById('transportCost').value = journey.transport_cost || '';
                 document.getElementById('foodCost').value = journey.food_cost || '';
                 
@@ -1294,10 +1294,10 @@ class PersonalManagementApp {
     }
 
     async updateJourney(id) {
-        const from = document.getElementById('from').value.trim();
-        const to = document.getElementById('to').value.trim();
-        const date = document.getElementById('date').value;
-        const time = document.getElementById('time').value;
+        const from = document.getElementById('journeyFrom').value.trim();
+        const to = document.getElementById('journeyTo').value.trim();
+        const date = document.getElementById('journeyDate').value;
+        const time = document.getElementById('journeyTime').value;
         const transportCost = document.getElementById('transportCost').value;
         const foodCost = document.getElementById('foodCost').value;
 
@@ -1335,10 +1335,10 @@ class PersonalManagementApp {
     }
 
     clearJourneyForm() {
-        document.getElementById('from').value = '';
-        document.getElementById('to').value = '';
-        document.getElementById('date').value = '';
-        document.getElementById('time').value = '';
+        document.getElementById('journeyFrom').value = '';
+        document.getElementById('journeyTo').value = '';
+        document.getElementById('journeyDate').value = '';
+        document.getElementById('journeyTime').value = '';
         document.getElementById('transportCost').value = '';
         document.getElementById('foodCost').value = '';
     }

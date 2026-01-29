@@ -318,6 +318,15 @@ async function initializeDatabase() {
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
             )`,
             
+            `CREATE TABLE IF NOT EXISTS savings (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                amount DECIMAL(10,2) NOT NULL,
+                date DATE NOT NULL,
+                user_id INT DEFAULT 1,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            )`,
+            
             `CREATE TABLE IF NOT EXISTS activities (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 description VARCHAR(255) NOT NULL,

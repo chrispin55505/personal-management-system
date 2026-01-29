@@ -412,6 +412,72 @@ router.post('/journeys', async (req, res) => {
     }
 });
 
+// Savings endpoints
+router.get('/savings', async (req, res) => {
+    try {
+        const { pool } = require('../config/database-simple');
+        console.log('💰 Loading savings...');
+        const [rows] = await pool.query('SELECT * FROM savings ORDER BY date DESC');
+        console.log(`✅ Loaded ${rows.length} savings records`);
+        res.json(rows);
+    } catch (error) {
+        console.error('❌ Savings load error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+router.post('/savings', async (req, res) => {
+    try {
+        const { pool } = require('../config/database-simple');
+        const { amount, date } = req.body;
+        
+        console.log('💰 Adding savings record:', { amount, date });
+        
+        // Validate required fields
+        if (!amount || !date) {
+            return res.status(400).json({ 
+                error: 'Missing required fields',
+                required: ['amount', 'date']
+            });
+        }
+        
+        const [result] = await pool.query(
+            'INSERT INTO savings (amount, date, user_id) VALUES (?, ?, ?)',
+            [parseFloat(amount), date, 1]
+        );
+        
+        console.log(`✅ Savings record added with ID: ${result.insertId}`);
+        res.json({ id: result.insertId, success: true, message: 'Savings record added successfully' });
+    } catch (error) {
+        console.error('❌ Savings insert error:', error);
+        res.status(500).json({ 
+            error: 'Failed to add savings record',
+            details: error.message 
+        });
+    }
+});
+
+router.delete('/savings/:id', async (req, res) => {
+    try {
+        const { pool } = require('../config/database-simple');
+        const id = req.params.id;
+        
+        console.log(`🗑️ Deleting savings record ID: ${id}`);
+        
+        const [result] = await pool.query('DELETE FROM savings WHERE id = ?', [id]);
+        
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'Savings record not found' });
+        }
+        
+        console.log(`✅ Savings record ${id} deleted`);
+        res.json({ success: true, message: 'Savings record deleted successfully' });
+    } catch (error) {
+        console.error('❌ Savings delete error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // Activities endpoint
 router.get('/activities', async (req, res) => {
     try {

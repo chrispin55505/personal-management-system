@@ -350,6 +350,16 @@ async function initializeDatabase() {
                     console.log('ℹ️ Timetable table did not exist or could not be dropped');
                 }
             }
+            // Special handling for savings table to fix potential schema issues
+            if (table.includes('CREATE TABLE IF NOT EXISTS savings')) {
+                try {
+                    // Drop and recreate savings table to ensure correct schema
+                    await pool.query('DROP TABLE IF EXISTS savings');
+                    console.log('🗑️ Dropped existing savings table');
+                } catch (dropError) {
+                    console.log('ℹ️ Savings table did not exist or could not be dropped');
+                }
+            }
             await pool.query(table);
         }
 

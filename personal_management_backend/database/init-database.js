@@ -17,34 +17,53 @@ async function retryDatabaseConnection(maxRetries = 5, delayMs = 3000) {
             
             // Try to parse Railway MySQL URL first
             if (process.env.RAILWAY_SERVICE_MYSQL_URL) {
-                console.log('🔗 Found RAILWAY_SERVICE_MYSQL_URL, parsing...');
                 const mysqlUrl = process.env.RAILWAY_SERVICE_MYSQL_URL;
-                console.log('🌐 MySQL URL:', mysqlUrl.replace(/:([^:@]+)@/, ':***@')); // Hide password
+                console.log('🔗 Found RAILWAY_SERVICE_MYSQL_URL:', mysqlUrl);
                 
-                try {
-                    // Parse mysql://user:password@host:port/database
-                    const urlPattern = /^mysql:\/\/([^:]+):([^@]+)@([^:]+):(\d+)\/(.+)$/;
-                    const match = mysqlUrl.match(urlPattern);
+                // Check if it's a full URL or just a hostname
+                if (mysqlUrl.startsWith('mysql://')) {
+                    console.log('🌐 Full MySQL URL detected, parsing...');
+                    console.log('🌐 MySQL URL:', mysqlUrl.replace(/:([^:@]+)@/, ':***@')); // Hide password
                     
-                    if (match) {
-                        connectionConfig = {
-                            host: match[3],
-                            user: match[1],
-                            password: match[2],
-                            port: parseInt(match[4]),
-                            database: match[5],
-                            ssl: { rejectUnauthorized: false },
-                            connectTimeout: 10000,
-                            charset: 'utf8mb4'
-                        };
-                        console.log('✅ Successfully parsed MySQL URL');
-                        console.log('� Using host:', match[3]);
-                    } else {
-                        throw new Error('Invalid MySQL URL format');
+                    try {
+                        // Parse mysql://user:password@host:port/database
+                        const urlPattern = /^mysql:\/\/([^:]+):([^@]+)@([^:]+):(\d+)\/(.+)$/;
+                        const match = mysqlUrl.match(urlPattern);
+                        
+                        if (match) {
+                            connectionConfig = {
+                                host: match[3],
+                                user: match[1],
+                                password: match[2],
+                                port: parseInt(match[4]),
+                                database: match[5],
+                                ssl: { rejectUnauthorized: false },
+                                connectTimeout: 10000,
+                                charset: 'utf8mb4'
+                            };
+                            console.log('✅ Successfully parsed MySQL URL');
+                            console.log('🔧 Using host:', match[3]);
+                        } else {
+                            throw new Error('Invalid MySQL URL format');
+                        }
+                    } catch (parseError) {
+                        console.error('❌ Failed to parse MySQL URL:', parseError.message);
+                        throw parseError;
                     }
-                } catch (parseError) {
-                    console.error('❌ Failed to parse MySQL URL:', parseError.message);
-                    throw parseError;
+                } else {
+                    // It's just a hostname, use fallback method
+                    console.log('🌐 Hostname detected, using fallback method...');
+                    connectionConfig = {
+                        host: mysqlUrl,
+                        user: process.env.RAILWAY_MYSQL_USER || process.env.MYSQLUSER || 'root',
+                        password: process.env.RAILWAY_MYSQL_PASSWORD || process.env.MYSQLPASSWORD || '@nzali2006',
+                        port: process.env.RAILWAY_MYSQL_PORT || process.env.MYSQLPORT || 3306,
+                        database: process.env.RAILWAY_MYSQL_DATABASE_NAME || process.env.MYSQL_DATABASE || 'database',
+                        ssl: { rejectUnauthorized: false },
+                        connectTimeout: 10000,
+                        charset: 'utf8mb4'
+                    };
+                    console.log('✅ Using hostname with credentials');
                 }
             } else {
                 // Fallback to individual environment variables

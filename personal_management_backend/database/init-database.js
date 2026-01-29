@@ -234,13 +234,13 @@ async function initializeDatabase() {
         pool = await retryDatabaseConnection(5, 3000);
 
         // Create database if not exists
-        const dbName = 'database';
+        const dbName = 'railway';
         console.log(`📁 Creating/using database: ${dbName}`);
         
         // Create database first, then use it
-        await pool.execute(`CREATE DATABASE IF NOT EXISTS \`database\``);
-        await pool.execute(`USE \`database\``);
-        console.log(`✅ Database 'database' is ready`);
+        await pool.execute(`CREATE DATABASE IF NOT EXISTS \`railway\``);
+        await pool.execute(`USE \`railway\``);
+        console.log(`✅ Database 'railway' is ready`);
 
         // Create tables
         const tables = [

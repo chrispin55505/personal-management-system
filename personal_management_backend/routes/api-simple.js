@@ -540,6 +540,43 @@ router.post('/savings', async (req, res) => {
     }
 });
 
+router.put('/journeys/:id/status', async (req, res) => {
+    try {
+        const { pool } = require('../config/database-simple');
+        const id = req.params.id;
+        const { status } = req.body;
+        
+        console.log('🚗 Updating journey status:', { id, status });
+        
+        // Validate status
+        const validStatuses = ['pending', 'completed', 'cancelled'];
+        if (!validStatuses.includes(status)) {
+            return res.status(400).json({ 
+                error: 'Invalid status',
+                validStatuses 
+            });
+        }
+        
+        const [result] = await pool.query(
+            'UPDATE journeys SET status = ? WHERE id = ?',
+            [status, id]
+        );
+        
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'Journey not found' });
+        }
+        
+        console.log(`✅ Journey ${id} status updated to ${status}`);
+        res.json({ success: true, message: `Journey marked as ${status}` });
+    } catch (error) {
+        console.error('❌ Journey status update error:', error);
+        res.status(500).json({ 
+            error: 'Failed to update journey status',
+            details: error.message 
+        });
+    }
+});
+
 router.delete('/money/:id', async (req, res) => {
     try {
         const { pool } = require('../config/database-simple');

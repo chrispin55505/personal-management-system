@@ -822,9 +822,9 @@ class PersonalManagementApp {
                     <td>${totalCost.toLocaleString()} TZS</td>
                     <td><span class="status status-${journey.status || 'pending'}">${journey.status || 'pending'}</span></td>
                     <td>
-                        <button class="action-btn edit-btn" onclick="app.editJourney(${journey.id})"><i class="fas fa-edit"></i></button>
-                        <button class="action-btn delete-btn" onclick="app.deleteJourney(${journey.id})"><i class="fas fa-trash"></i></button>
-                        <button class="action-btn" style="background-color: var(--success); color: white;" onclick="app.completeJourney(${journey.id})"><i class="fas fa-check"></i></button>
+                        <button class="action-btn edit-btn" data-id="${journey.id}" data-action="edit-journey"><i class="fas fa-edit"></i></button>
+                        <button class="action-btn delete-btn" data-id="${journey.id}" data-action="delete-journey"><i class="fas fa-trash"></i></button>
+                        <button class="action-btn" style="background-color: var(--success); color: white;" data-id="${journey.id}" data-action="complete-journey"><i class="fas fa-check"></i></button>
                     </td>
                 `;
                 tbody.appendChild(row);
@@ -1289,14 +1289,52 @@ class PersonalManagementApp {
     }
 
     async completeJourney(id) {
+        const statusOptions = ['pending', 'completed', 'cancelled'];
+        const currentStatus = await this.getCurrentJourneyStatus(id);
+        
+        // Create status selection dialog
+        const statusOptionsHtml = statusOptions.map(status => 
+            `<option value="${status}" ${status === currentStatus ? 'selected' : ''}>${status.charAt(0).toUpperCase() + status.slice(1)}</option>`
+        ).join('');
+        
+        const confirmed = confirm(`Update journey status?\n\nCurrent status: ${currentStatus}\n\nClick OK to change status, or Cancel to keep current status.`);
+        
+        if (confirmed) {
+            // Show simple prompt for status selection
+            const newStatus = prompt(`Select new status for journey:\n\n1. pending\n2. completed\n3. cancelled\n\nEnter number (1-3):`, '1');
+            
+            let selectedStatus;
+            switch (newStatus) {
+                case '1': selectedStatus = 'pending'; break;
+                case '2': selectedStatus = 'completed'; break;
+                case '3': selectedStatus = 'cancelled'; break;
+                default: selectedStatus = currentStatus; break;
+            }
+            
+            if (selectedStatus !== currentStatus) {
+                try {
+                    await this.apiCall(`/journeys/${id}/status`, {
+                        method: 'PUT',
+                        body: JSON.stringify({ status: selectedStatus })
+                    });
+                    await this.loadJourneys();
+                    await this.loadDashboardData();
+                    this.showNotification('Journey Status Updated', `Journey marked as ${selectedStatus}`);
+                } catch (error) {
+                    console.error('Failed to update journey status:', error);
+                    alert('Failed to update journey status. Please try again.');
+                }
+            }
+        }
+    }
+
+    async getCurrentJourneyStatus(id) {
         try {
-            await this.apiCall(`/journeys/${id}/complete`, { method: 'PUT' });
-            await this.loadJourneys();
-            await this.loadDashboardData();
-            this.showNotification('Journey Completed', 'Journey has been marked as completed');
+            const journeys = await this.apiCall('/journeys');
+            const journey = journeys.find(j => j.id === id);
+            return journey ? (journey.status || 'pending') : 'pending';
         } catch (error) {
-            console.error('Failed to complete journey:', error);
-            alert('Failed to update journey. Please try again.');
+            return 'pending';
         }
     }
 }

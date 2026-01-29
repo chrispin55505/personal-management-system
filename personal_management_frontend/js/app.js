@@ -999,7 +999,7 @@ class PersonalManagementApp {
         const status = document.getElementById('journeyStatus').value;
 
         if (!from || !to || !date) {
-            alert('Please fill in all required fields');
+            alert('Please fill in from, to, and date fields');
             return;
         }
 
@@ -1014,10 +1014,9 @@ class PersonalManagementApp {
                     from,
                     to,
                     date,
-                    time: time || '00:00',
-                    transportCost: transport,
-                    foodCost: food,
-                    totalCost: total,
+                    time,
+                    transportCost,
+                    foodCost,
                     status
                 })
             });
@@ -1211,6 +1210,7 @@ class PersonalManagementApp {
         document.getElementById('journeyTime').value = '';
         document.getElementById('transportCost').value = '';
         document.getElementById('foodCost').value = '';
+        document.getElementById('journeyStatus').value = 'pending';
     }
 
     // Skills method
@@ -1359,6 +1359,33 @@ class PersonalManagementApp {
         }
     }
 
+    editJourney(id) {
+        // Find the journey and populate the form
+        this.apiCall('/journeys').then(journeys => {
+            const journey = journeys.find(j => j.id === id);
+            if (journey) {
+                document.getElementById('journeyFrom').value = journey.journey_from || '';
+                document.getElementById('journeyTo').value = journey.journey_to || '';
+                document.getElementById('journeyDate').value = journey.journey_date || '';
+                document.getElementById('journeyTime').value = journey.journey_time || '';
+                document.getElementById('transportCost').value = journey.transport_cost || '';
+                document.getElementById('foodCost').value = journey.food_cost || '';
+                document.getElementById('journeyStatus').value = journey.status || 'pending';
+                
+                // Change button to update mode
+                const addBtn = document.getElementById('addJourneyBtn');
+                addBtn.textContent = 'Update Journey';
+                addBtn.onclick = () => this.updateJourney(id);
+                
+                // Scroll to form
+                document.getElementById('journeys').scrollIntoView({ behavior: 'smooth' });
+            }
+        }).catch(error => {
+            console.error('Failed to load journey for editing:', error);
+            alert('Failed to load journey data for editing');
+        });
+    }
+
     async updateJourney(id) {
         const from = document.getElementById('journeyFrom').value.trim();
         const to = document.getElementById('journeyTo').value.trim();
@@ -1366,6 +1393,7 @@ class PersonalManagementApp {
         const time = document.getElementById('journeyTime').value;
         const transportCost = document.getElementById('transportCost').value;
         const foodCost = document.getElementById('foodCost').value;
+        const status = document.getElementById('journeyStatus').value;
 
         if (!from || !to || !date) {
             alert('Please fill in from, to, and date fields');
@@ -1381,7 +1409,8 @@ class PersonalManagementApp {
                     date,
                     time,
                     transportCost,
-                    foodCost
+                    foodCost,
+                    status
                 })
             });
 

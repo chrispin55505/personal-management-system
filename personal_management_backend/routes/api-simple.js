@@ -540,6 +540,45 @@ router.post('/savings', async (req, res) => {
     }
 });
 
+router.put('/journeys/:id', async (req, res) => {
+    try {
+        const { pool } = require('../config/database-simple');
+        const id = req.params.id;
+        const { from, to, date, time, transportCost, foodCost } = req.body;
+        
+        console.log('🚗 Updating journey:', { id, from, to, date, time, transportCost, foodCost });
+        
+        // Validate required fields
+        if (!from || !to || !date) {
+            return res.status(400).json({ 
+                error: 'Missing required fields',
+                required: ['from', 'to', 'date']
+            });
+        }
+        
+        const transport = parseFloat(transportCost) || 0;
+        const food = parseFloat(foodCost) || 0;
+        
+        const [result] = await pool.query(
+            'UPDATE journeys SET journey_from = ?, journey_to = ?, journey_date = ?, journey_time = ?, transport_cost = ?, food_cost = ? WHERE id = ?',
+            [from, to, date, time || '00:00', transport, food, id]
+        );
+        
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'Journey not found' });
+        }
+        
+        console.log(`✅ Journey ${id} updated`);
+        res.json({ success: true, message: 'Journey updated successfully' });
+    } catch (error) {
+        console.error('❌ Journey update error:', error);
+        res.status(500).json({ 
+            error: 'Failed to update journey',
+            details: error.message 
+        });
+    }
+});
+
 router.put('/journeys/:id/status', async (req, res) => {
     try {
         const { pool } = require('../config/database-simple');

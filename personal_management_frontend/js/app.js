@@ -105,6 +105,9 @@ class PersonalManagementApp {
                     case 'delete-journey':
                         this.deleteJourney(parseInt(id));
                         break;
+                    case 'complete-journey':
+                        this.completeJourney(parseInt(id));
+                        break;
                     case 'edit-savings':
                         this.editSavings(parseInt(id));
                         break;
@@ -1016,11 +1019,6 @@ class PersonalManagementApp {
         alert('Edit functionality coming soon!');
     }
 
-    editJourney(id) {
-        console.log('Edit journey:', id);
-        alert('Edit functionality coming soon!');
-    }
-
     editSavings(id) {
         console.log('Edit savings:', id);
         alert('Edit functionality coming soon!');
@@ -1270,8 +1268,79 @@ class PersonalManagementApp {
     }
 
     async editJourney(id) {
-        console.log('Edit journey:', id);
-        // TODO: Implement edit functionality
+        // Find the journey and populate the form
+        this.apiCall('/journeys').then(journeys => {
+            const journey = journeys.find(j => j.id === id);
+            if (journey) {
+                document.getElementById('from').value = journey.journey_from;
+                document.getElementById('to').value = journey.journey_to;
+                document.getElementById('date').value = journey.journey_date;
+                document.getElementById('time').value = journey.journey_time || '';
+                document.getElementById('transportCost').value = journey.transport_cost || '';
+                document.getElementById('foodCost').value = journey.food_cost || '';
+                
+                // Change button to update mode
+                const addBtn = document.getElementById('addJourneyBtn');
+                addBtn.textContent = 'Update Journey';
+                addBtn.onclick = () => this.updateJourney(id);
+                
+                // Scroll to form
+                document.getElementById('journeys').scrollIntoView({ behavior: 'smooth' });
+            }
+        }).catch(error => {
+            console.error('Failed to load journey for editing:', error);
+            alert('Failed to load journey data for editing');
+        });
+    }
+
+    async updateJourney(id) {
+        const from = document.getElementById('from').value.trim();
+        const to = document.getElementById('to').value.trim();
+        const date = document.getElementById('date').value;
+        const time = document.getElementById('time').value;
+        const transportCost = document.getElementById('transportCost').value;
+        const foodCost = document.getElementById('foodCost').value;
+
+        if (!from || !to || !date) {
+            alert('Please fill in from, to, and date fields');
+            return;
+        }
+
+        try {
+            await this.apiCall(`/journeys/${id}`, {
+                method: 'PUT',
+                body: JSON.stringify({
+                    from,
+                    to,
+                    date,
+                    time,
+                    transportCost,
+                    foodCost
+                })
+            });
+
+            this.clearJourneyForm();
+            await this.loadJourneys();
+            await this.loadDashboardData();
+            this.showNotification('Journey Updated', `Updated journey from ${from} to ${to}`);
+            
+            // Reset button to add mode
+            const addBtn = document.getElementById('addJourneyBtn');
+            addBtn.textContent = 'Add Journey';
+            addBtn.onclick = () => this.addJourney();
+        } catch (error) {
+            console.error('Failed to update journey:', error);
+            alert(`Failed to update journey: ${error.message}`);
+        }
+    }
+
+    clearJourneyForm() {
+        document.getElementById('from').value = '';
+        document.getElementById('to').value = '';
+        document.getElementById('date').value = '';
+        document.getElementById('time').value = '';
+        document.getElementById('transportCost').value = '';
+        document.getElementById('foodCost').value = '';
     }
 
     async deleteJourney(id) {

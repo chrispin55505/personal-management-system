@@ -126,9 +126,9 @@ async function retryDatabaseConnection(maxRetries = 5, delayMs = 3000) {
                     console.log('✅ Using hostname with credentials');
                 }
             } else {
-                // Use the complete Railway MySQL URL
+                // Use the complete Railway MySQL URL with root user
                 console.log('🌐 Using complete Railway MySQL URL...');
-                const mysqlUrl = 'mysql://chrispin:ELgFXlNvQaWYcgqOjqRHrHrRxwGhnKMn@mysql.railway.internal:3306/database';
+                const mysqlUrl = 'mysql://root:ELgFXlNvQaWYcgqOjqRHrHrRxwGhnKMn@mysql.railway.internal:3306/database';
                 
                 try {
                     // Parse mysql://user:password@host:port/database

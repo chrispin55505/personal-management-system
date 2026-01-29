@@ -238,9 +238,9 @@ async function initializeDatabase() {
         console.log(`📁 Creating/using database: ${dbName}`);
         
         // Create database first, then use it
-        await pool.execute(`CREATE DATABASE IF NOT EXISTS ${dbName}`);
-        await pool.execute(`USE ${dbName}`);
-        console.log(`✅ Database '${dbName}' is ready`);
+        await pool.execute(`CREATE DATABASE IF NOT EXISTS \`database\``);
+        await pool.execute(`USE \`database\``);
+        console.log(`✅ Database 'database' is ready`);
 
         // Create tables
         const tables = [

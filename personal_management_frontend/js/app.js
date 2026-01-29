@@ -329,11 +329,11 @@ class PersonalManagementApp {
             timetable.forEach(exam => {
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td>${exam.moduleCode}</td>
-                    <td>${exam.moduleName}</td>
-                    <td>${this.formatDate(exam.date)}</td>
-                    <td>${exam.time}</td>
-                    <td>${exam.venue}</td>
+                    <td>${exam.module_code}</td>
+                    <td>${exam.module_name}</td>
+                    <td>${this.formatDate(exam.exam_date)}</td>
+                    <td>${exam.exam_time}</td>
+                    <td>${exam.venue || 'N/A'}</td>
                     <td>
                         <button class="action-btn edit-btn" onclick="app.editTimetable(${exam.id})"><i class="fas fa-edit"></i></button>
                         <button class="action-btn delete-btn" onclick="app.deleteTimetable(${exam.id})"><i class="fas fa-trash"></i></button>
@@ -454,11 +454,11 @@ class PersonalManagementApp {
             moneyRecords.forEach(record => {
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td>${record.person}</td>
-                    <td>${record.amount.toLocaleString()} TZS</td>
-                    <td>${this.formatDate(record.borrowDate)}</td>
-                    <td>${record.returnDate ? this.formatDate(record.returnDate) : 'Not specified'}</td>
-                    <td><span class="status status-${record.status}">${record.status}</span></td>
+                    <td>${record.person_name || 'N/A'}</td>
+                    <td>${parseFloat(record.amount || 0).toLocaleString()} TZS</td>
+                    <td>${this.formatDate(record.borrow_date)}</td>
+                    <td>${record.expected_return_date ? this.formatDate(record.expected_return_date) : 'Not specified'}</td>
+                    <td><span class="status status-${record.status || 'pending'}">${record.status || 'pending'}</span></td>
                     <td>
                         <button class="action-btn edit-btn" onclick="app.editMoney(${record.id})"><i class="fas fa-edit"></i></button>
                         <button class="action-btn delete-btn" onclick="app.deleteMoney(${record.id})"><i class="fas fa-trash"></i></button>
@@ -522,7 +522,7 @@ class PersonalManagementApp {
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>${this.formatDate(saving.date)}</td>
-                    <td>${saving.amount.toLocaleString()} TZS</td>
+                    <td>${parseFloat(saving.amount || 0).toLocaleString()} TZS</td>
                     <td>
                         <button class="action-btn edit-btn" onclick="app.editSavings(${saving.id})"><i class="fas fa-edit"></i></button>
                         <button class="action-btn delete-btn" onclick="app.deleteSavings(${saving.id})"><i class="fas fa-trash"></i></button>
@@ -575,9 +575,9 @@ class PersonalManagementApp {
                 row.innerHTML = `
                     <td>${module.code}</td>
                     <td>${module.name}</td>
-                    <td>${module.lecturer}</td>
-                    <td>Semester ${module.semester}</td>
-                    <td>Year ${module.year}</td>
+                    <td>${module.lecturer || 'N/A'}</td>
+                    <td>Semester ${module.semester || 1}</td>
+                    <td>Year ${module.year || 1}</td>
                     <td>
                         <button class="action-btn edit-btn" onclick="app.editModule(${module.id})"><i class="fas fa-edit"></i></button>
                         <button class="action-btn delete-btn" onclick="app.deleteModule(${module.id})"><i class="fas fa-trash"></i></button>
@@ -659,8 +659,8 @@ class PersonalManagementApp {
             tbody.innerHTML = '';
 
             appointments.sort((a, b) => {
-                const dateA = new Date(`${a.date}T${a.time}`);
-                const dateB = new Date(`${b.date}T${b.time}`);
+                const dateA = new Date(`${a.appointment_date}T${a.appointment_time}`);
+                const dateB = new Date(`${b.appointment_date}T${b.appointment_time}`);
                 return dateA - dateB;
             });
 
@@ -668,9 +668,9 @@ class PersonalManagementApp {
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>${appointment.name}</td>
-                    <td>${appointment.place}</td>
-                    <td>${this.formatDate(appointment.date)} at ${appointment.time}</td>
-                    <td>${appointment.aim}</td>
+                    <td>${appointment.place || 'N/A'}</td>
+                    <td>${this.formatDate(appointment.appointment_date)} at ${appointment.appointment_time}</td>
+                    <td>${appointment.aim || 'N/A'}</td>
                     <td>${this.formatNotification(appointment.notification)}</td>
                     <td>
                         <button class="action-btn edit-btn" onclick="app.editAppointment(${appointment.id})"><i class="fas fa-edit"></i></button>
@@ -736,17 +736,21 @@ class PersonalManagementApp {
             const tbody = document.getElementById('journeysBody');
             tbody.innerHTML = '';
 
-            journeys.sort((a, b) => new Date(a.date) - new Date(b.date));
+            journeys.sort((a, b) => new Date(a.journey_date) - new Date(b.journey_date));
 
             journeys.forEach(journey => {
+                const transportCost = parseFloat(journey.transport_cost || 0);
+                const foodCost = parseFloat(journey.food_cost || 0);
+                const totalCost = transportCost + foodCost;
+                
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td>${journey.from} → ${journey.to}</td>
-                    <td>${this.formatDate(journey.date)} ${journey.time ? 'at ' + journey.time : ''}</td>
-                    <td>${journey.transportCost.toLocaleString()} TZS</td>
-                    <td>${journey.foodCost.toLocaleString()} TZS</td>
-                    <td>${journey.totalCost.toLocaleString()} TZS</td>
-                    <td><span class="status status-${journey.status}">${journey.status}</span></td>
+                    <td>${journey.journey_from} → ${journey.journey_to}</td>
+                    <td>${this.formatDate(journey.journey_date)} ${journey.journey_time ? 'at ' + journey.journey_time : ''}</td>
+                    <td>${transportCost.toLocaleString()} TZS</td>
+                    <td>${foodCost.toLocaleString()} TZS</td>
+                    <td>${totalCost.toLocaleString()} TZS</td>
+                    <td><span class="status status-${journey.status || 'pending'}">${journey.status || 'pending'}</span></td>
                     <td>
                         <button class="action-btn edit-btn" onclick="app.editJourney(${journey.id})"><i class="fas fa-edit"></i></button>
                         <button class="action-btn delete-btn" onclick="app.deleteJourney(${journey.id})"><i class="fas fa-trash"></i></button>
@@ -801,6 +805,43 @@ class PersonalManagementApp {
             console.error('Failed to add journey:', error);
             alert(`Failed to add journey: ${error.message}`);
         }
+    }
+
+    // Edit functions (placeholder implementations)
+    editTimetable(id) {
+        console.log('Edit timetable:', id);
+        alert('Edit functionality coming soon!');
+    }
+
+    editModule(id) {
+        console.log('Edit module:', id);
+        alert('Edit functionality coming soon!');
+    }
+
+    editMoney(id) {
+        console.log('Edit money record:', id);
+        alert('Edit functionality coming soon!');
+    }
+
+    editAppointment(id) {
+        console.log('Edit appointment:', id);
+        alert('Edit functionality coming soon!');
+    }
+
+    editJourney(id) {
+        console.log('Edit journey:', id);
+        alert('Edit functionality coming soon!');
+    }
+
+    editSavings(id) {
+        console.log('Edit savings:', id);
+        alert('Edit functionality coming soon!');
+    }
+
+    // Complete functions
+    completeJourney(id) {
+        console.log('Complete journey:', id);
+        alert('Complete functionality coming soon!');
     }
 
     clearJourneyForm() {

@@ -1,18 +1,19 @@
 const mysql = require('mysql2/promise');
 require('dotenv').config();
 
-// Simplified database configuration for Railway.app
+// Use the same working configuration as the main database.js
 const dbConfig = {
-    host: process.env.RAILWAY_PRIVATE_HOST || process.env.DB_HOST || 'localhost',
-    user: process.env.RAILWAY_MYSQL_USER || process.env.DB_USER || 'root',
-    password: process.env.RAILWAY_MYSQL_PASSWORD || process.env.DB_PASSWORD || '',
-    database: process.env.RAILWAY_MYSQL_DATABASE_NAME || process.env.DB_NAME || 'railway',
-    port: process.env.RAILWAY_MYSQL_PORT || process.env.DB_PORT || 3306,
+    host: 'mysql.railway.internal',
+    user: 'root',
+    password: 'ELgFXlNvQaWYcgqOjqRHrHrRxwGhnKMn',
+    database: 'railway',
+    port: 3306,
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0,
-    ssl: process.env.RAILWAY_ENVIRONMENT ? { rejectUnauthorized: false } : false,
-    // Removed invalid options: acquireTimeout, reconnect
+    ssl: { rejectUnauthorized: false },
+    connectTimeout: 10000,
+    charset: 'utf8mb4'
 };
 
 const pool = mysql.createPool(dbConfig);

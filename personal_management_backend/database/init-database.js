@@ -341,7 +341,7 @@ async function initializeDatabase() {
         );
 
         console.log('✅ Database initialized successfully!');
-        return true;
+        return pool; // Return the working pool
 
     } catch (error) {
         console.error('❌ Database initialization failed:', error.message);
@@ -368,11 +368,12 @@ async function initializeDatabase() {
         }
         
         console.log('🔧 Running in mock mode (without database)');
-        return false;
+        return null; // Return null instead of false
     } finally {
-        if (pool) {
-            await pool.end();
-        }
+        // Don't close the pool - return it for the server to use
+        // if (pool) {
+        //     await pool.end();
+        // }
     }
 }
 

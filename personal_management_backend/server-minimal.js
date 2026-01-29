@@ -28,32 +28,18 @@ app.use(session({
 let pool;
 async function initDatabase() {
     try {
-        // First, initialize the database structure
-        const dbInitialized = await initializeDatabase();
+        // Initialize database and get the working pool
+        pool = await initializeDatabase();
         
-        // Then create the connection pool
-        pool = mysql.createPool({
-            host: process.env.RAILWAY_PRIVATE_HOST || process.env.DB_HOST || 'localhost',
-            user: process.env.RAILWAY_MYSQL_USER || process.env.DB_USER || 'root',
-            password: process.env.RAILWAY_MYSQL_PASSWORD || process.env.DB_PASSWORD || '',
-            database: process.env.RAILWAY_MYSQL_DATABASE_NAME || process.env.DB_NAME || 'railway', // Use railway database
-            port: process.env.RAILWAY_MYSQL_PORT || process.env.DB_PORT || 3306,
-            waitForConnections: true,
-            connectionLimit: 10,
-            queueLimit: 0,
-            ssl: process.env.RAILWAY_ENVIRONMENT ? { 
-                rejectUnauthorized: false,
-                mode: 'REQUIRED'
-            } : (process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false),
-            connectTimeout: 10000,
-            charset: 'utf8mb4'
-            // Removed invalid options: acquireTimeout, reconnect
-        });
-        
-        const connection = await pool.getConnection();
-        console.log('✅ Database connected successfully');
-        connection.release();
-        return true;
+        if (pool) {
+            const connection = await pool.getConnection();
+            console.log('✅ Database connected successfully');
+            connection.release();
+            return true;
+        } else {
+            console.log('⚠️ Database connection failed, running without database');
+            return false;
+        }
     } catch (error) {
         console.log('⚠️ Database connection failed, running without database:', error.message);
         return false;

@@ -331,11 +331,11 @@ async function initializeDatabase() {
 
         // Create all tables
         for (const table of tables) {
-            await pool.execute(table);
+            await pool.query(table);
         }
 
         // Insert default user
-        await pool.execute(
+        await pool.query(
             'INSERT IGNORE INTO users (username, password, email) VALUES (?, ?, ?)',
             ['chrispin', '@nzali2006', 'chrispingolden@gmail.com']
         );

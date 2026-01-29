@@ -17,7 +17,7 @@ async function retryDatabaseConnection(maxRetries = 5, delayMs = 3000) {
                 host: process.env.RAILWAY_PRIVATE_HOST || process.env.DB_HOST || 'localhost',
                 user: process.env.RAILWAY_MYSQL_USER || process.env.DB_USER || 'root',
                 password: process.env.RAILWAY_MYSQL_PASSWORD || process.env.DB_PASSWORD || '',
-                port: process.env.RAILWAY_MYSQL_PORT || 3306,
+                port: process.env.RAILWAY_MYSQL_PORT || process.env.DB_PORT || 3306,
                 ssl: process.env.RAILWAY_ENVIRONMENT ? { 
                     rejectUnauthorized: false,
                     mode: 'REQUIRED'
@@ -36,7 +36,13 @@ async function retryDatabaseConnection(maxRetries = 5, delayMs = 3000) {
                 railwayPrivateHost: process.env.RAILWAY_PRIVATE_HOST || 'NOT SET',
                 railwayUser: process.env.RAILWAY_MYSQL_USER || 'NOT SET',
                 railwayPassword: process.env.RAILWAY_MYSQL_PASSWORD ? '[SET]' : '[NOT SET]',
-                railwayPort: process.env.RAILWAY_MYSQL_PORT || 'NOT SET'
+                railwayPort: process.env.RAILWAY_MYSQL_PORT || 'NOT SET',
+                allEnvVars: Object.keys(process.env).filter(key => key.includes('RAILWAY') || key.includes('MYSQL') || key.includes('DB')),
+                mysqlUrl: process.env.MYSQL_URL || 'NOT SET',
+                mysqlUser: process.env.MYSQLUSER || 'NOT SET',
+                mysqlPassword: process.env.MYSQLPASSWORD ? '[SET]' : '[NOT SET]',
+                mysqlHost: process.env.MYSQLHOST || 'NOT SET',
+                mysqlPort: process.env.MYSQLPORT || 'NOT SET'
             });
             
             const pool = mysql.createPool(connectionConfig);

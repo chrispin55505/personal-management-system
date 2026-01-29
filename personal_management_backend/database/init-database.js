@@ -5,6 +5,8 @@ async function initializeDatabase() {
     let pool;
     
     try {
+        console.log('🔧 Starting database initialization...');
+        
         // Create connection without database specified
         pool = mysql.createPool({
             host: process.env.RAILWAY_PRIVATE_HOST || process.env.DB_HOST || 'localhost',
@@ -23,9 +25,16 @@ async function initializeDatabase() {
         console.log('🔧 Initializing database...');
         console.log('🔗 Host:', process.env.RAILWAY_PRIVATE_HOST || process.env.DB_HOST);
         console.log('👤 User:', process.env.RAILWAY_MYSQL_USER || process.env.DB_USER);
+        console.log('🚂 Railway Environment:', process.env.RAILWAY_ENVIRONMENT ? 'Yes' : 'No');
+
+        // Test connection first
+        const connection = await pool.getConnection();
+        console.log('✅ Database connection established');
+        connection.release();
 
         // Create database if not exists
         const dbName = process.env.RAILWAY_MYSQL_DATABASE_NAME || process.env.DB_NAME || 'railway';
+        console.log(`📁 Creating/using database: ${dbName}`);
         await pool.execute(`CREATE DATABASE IF NOT EXISTS ${dbName}`);
         await pool.execute(`USE ${dbName}`);
 
@@ -132,6 +141,28 @@ async function initializeDatabase() {
 
     } catch (error) {
         console.error('❌ Database initialization failed:', error.message);
+        console.error('🔍 Error details:', {
+            code: error.code,
+            errno: error.errno,
+            sqlState: error.sqlState,
+            sqlMessage: error.sqlMessage
+        });
+        
+        // Provide specific guidance based on error type
+        if (error.code === 'ECONNREFUSED') {
+            console.error('🚨 Connection refused - MySQL may not be running yet');
+            console.error('💡 Solution: Wait a moment and retry, or check MySQL service');
+        } else if (error.code === 'ENOTFOUND') {
+            console.error('🚨 Host not found - Check database hostname configuration');
+            console.error('💡 Solution: Verify RAILWAY_PRIVATE_HOST environment variable');
+        } else if (error.code === 'ER_ACCESS_DENIED_ERROR') {
+            console.error('🚨 Access denied - Check database credentials');
+            console.error('💡 Solution: Verify RAILWAY_MYSQL_USER and RAILWAY_MYSQL_PASSWORD');
+        } else if (error.code === 'ER_BAD_DB_ERROR') {
+            console.error('🚨 Database error - May need manual schema setup');
+            console.error('💡 Solution: Run schema.sql in Railway MySQL Query tab');
+        }
+        
         console.log('🔧 Running in mock mode (without database)');
         return false;
     } finally {

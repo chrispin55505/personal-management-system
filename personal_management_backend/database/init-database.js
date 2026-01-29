@@ -1,36 +1,67 @@
 const mysql = require('mysql2/promise');
 require('dotenv').config();
 
+// Helper function to wait
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// Retry function for database connection
+async function retryDatabaseConnection(maxRetries = 5, delayMs = 3000) {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            console.log(`� Database connection attempt ${attempt}/${maxRetries}...`);
+            
+            const pool = mysql.createPool({
+                host: process.env.RAILWAY_PRIVATE_HOST || process.env.DB_HOST || 'localhost',
+                user: process.env.RAILWAY_MYSQL_USER || process.env.DB_USER || 'root',
+                password: process.env.RAILWAY_MYSQL_PASSWORD || process.env.DB_PASSWORD || '',
+                port: process.env.RAILWAY_MYSQL_PORT || 3306,
+                ssl: process.env.RAILWAY_ENVIRONMENT ? { 
+                    rejectUnauthorized: false,
+                    mode: 'REQUIRED'
+                } : (process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false),
+                connectTimeout: 10000,
+                charset: 'utf8mb4'
+            });
+
+            // Test connection
+            const connection = await pool.getConnection();
+            console.log('✅ Database connection established!');
+            connection.release();
+            
+            return pool;
+            
+        } catch (error) {
+            console.error(`❌ Attempt ${attempt} failed:`, error.message);
+            
+            if (attempt === maxRetries) {
+                throw error;
+            }
+            
+            console.log(`⏳ Waiting ${delayMs}ms before retry...`);
+            await sleep(delayMs);
+        }
+    }
+}
+
 async function initializeDatabase() {
     let pool;
     
     try {
         console.log('🔧 Starting database initialization...');
-        
-        // Create connection without database specified
-        pool = mysql.createPool({
-            host: process.env.RAILWAY_PRIVATE_HOST || process.env.DB_HOST || 'localhost',
-            user: process.env.RAILWAY_MYSQL_USER || process.env.DB_USER || 'root',
-            password: process.env.RAILWAY_MYSQL_PASSWORD || process.env.DB_PASSWORD || '',
-            port: process.env.RAILWAY_MYSQL_PORT || 3306,
-            ssl: process.env.RAILWAY_ENVIRONMENT ? { 
-                rejectUnauthorized: false,
-                mode: 'REQUIRED'
-            } : (process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false),
-            connectTimeout: 10000,
-            charset: 'utf8mb4'
-            // Removed invalid options: acquireTimeout, reconnect
-        });
-
-        console.log('🔧 Initializing database...');
+        console.log('🚂 Railway Environment:', process.env.RAILWAY_ENVIRONMENT ? 'Yes' : 'No');
         console.log('🔗 Host:', process.env.RAILWAY_PRIVATE_HOST || process.env.DB_HOST);
         console.log('👤 User:', process.env.RAILWAY_MYSQL_USER || process.env.DB_USER);
-        console.log('🚂 Railway Environment:', process.env.RAILWAY_ENVIRONMENT ? 'Yes' : 'No');
-
-        // Test connection first
-        const connection = await pool.getConnection();
-        console.log('✅ Database connection established');
-        connection.release();
+        
+        // Wait a bit for Railway services to be ready
+        if (process.env.RAILWAY_ENVIRONMENT) {
+            console.log('⏳ Waiting for Railway MySQL service to be ready...');
+            await sleep(5000); // Wait 5 seconds for MySQL to start
+        }
+        
+        // Try to connect with retries
+        pool = await retryDatabaseConnection(5, 3000);
 
         // Create database if not exists
         const dbName = process.env.RAILWAY_MYSQL_DATABASE_NAME || process.env.DB_NAME || 'railway';

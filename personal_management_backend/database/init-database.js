@@ -17,53 +17,35 @@ async function retryDatabaseConnection(maxRetries = 5, delayMs = 3000) {
             
             // Try to parse Railway MySQL URL first
             if (process.env.RAILWAY_SERVICE_MYSQL_URL) {
-                console.log('🔗 Found RAILWAY_SERVICE_MYSQL_URL, using as host...');
-                const mysqlHost = process.env.RAILWAY_SERVICE_MYSQL_URL;
-                console.log('🌐 MySQL Host:', mysqlHost);
+                console.log('🔗 Found RAILWAY_SERVICE_MYSQL_URL, parsing...');
+                const mysqlUrl = process.env.RAILWAY_SERVICE_MYSQL_URL;
+                console.log('🌐 MySQL URL:', mysqlUrl.replace(/:([^:@]+)@/, ':***@')); // Hide password
                 
-                // Test basic connectivity first
-                console.log('🔍 Testing basic connectivity to host...');
                 try {
-                    const net = require('net');
-                    const socket = new net.Socket();
+                    // Parse mysql://user:password@host:port/database
+                    const urlPattern = /^mysql:\/\/([^:]+):([^@]+)@([^:]+):(\d+)\/(.+)$/;
+                    const match = mysqlUrl.match(urlPattern);
                     
-                    const connectivityTest = new Promise((resolve, reject) => {
-                        socket.setTimeout(5000);
-                        socket.connect(3306, mysqlHost, () => {
-                            console.log('✅ Host is reachable on port 3306');
-                            socket.destroy();
-                            resolve(true);
-                        });
-                        socket.on('error', (err) => {
-                            console.log('❌ Host unreachable:', err.message);
-                            socket.destroy();
-                            reject(err);
-                        });
-                        socket.on('timeout', () => {
-                            console.log('❌ Connection to host timed out');
-                            socket.destroy();
-                            reject(new Error('Timeout'));
-                        });
-                    });
-                    
-                    await connectivityTest;
-                } catch (connectivityError) {
-                    console.log('⚠️ Basic connectivity test failed:', connectivityError.message);
-                    console.log('💡 This suggests the MySQL service is not running or not accessible');
+                    if (match) {
+                        connectionConfig = {
+                            host: match[3],
+                            user: match[1],
+                            password: match[2],
+                            port: parseInt(match[4]),
+                            database: match[5],
+                            ssl: { rejectUnauthorized: false },
+                            connectTimeout: 10000,
+                            charset: 'utf8mb4'
+                        };
+                        console.log('✅ Successfully parsed MySQL URL');
+                        console.log('� Using host:', match[3]);
+                    } else {
+                        throw new Error('Invalid MySQL URL format');
+                    }
+                } catch (parseError) {
+                    console.error('❌ Failed to parse MySQL URL:', parseError.message);
+                    throw parseError;
                 }
-                
-                // Railway provides the host, but we need to get credentials from other variables
-                connectionConfig = {
-                    host: mysqlHost,
-                    user: process.env.RAILWAY_MYSQL_USER || process.env.MYSQLUSER || 'root',
-                    password: process.env.RAILWAY_MYSQL_PASSWORD || process.env.MYSQLPASSWORD || '@nzali2006',
-                    port: process.env.RAILWAY_MYSQL_PORT || process.env.MYSQLPORT || 3306,
-                    database: process.env.RAILWAY_MYSQL_DATABASE_NAME || process.env.MYSQL_DATABASE || 'railway',
-                    ssl: { rejectUnauthorized: false },
-                    connectTimeout: 10000,
-                    charset: 'utf8mb4'
-                };
-                console.log('✅ Using Railway MySQL host with credentials');
             } else {
                 // Fallback to individual environment variables
                 connectionConfig = {
@@ -88,7 +70,7 @@ async function retryDatabaseConnection(maxRetries = 5, delayMs = 3000) {
                 database: connectionConfig.database || 'railway',
                 ssl: connectionConfig.ssl ? 'ENABLED' : 'DISABLED',
                 railwayEnv: process.env.RAILWAY_ENVIRONMENT ? 'YES' : 'NO',
-                railwayMysqlUrl: process.env.RAILWAY_SERVICE_MYSQL_URL || 'NOT SET',
+                railwayMysqlUrl: process.env.RAILWAY_SERVICE_MYSQL_URL ? '[SET]' : '[NOT SET]',
                 // Show all potential credential variables
                 railwayMysqlUser: process.env.RAILWAY_MYSQL_USER || 'NOT SET',
                 mysqlUser: process.env.MYSQLUSER || 'NOT SET',

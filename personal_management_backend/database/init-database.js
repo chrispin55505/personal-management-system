@@ -53,6 +53,7 @@ async function retryDatabaseConnection(maxRetries = 5, delayMs = 3000) {
                     user: process.env.RAILWAY_MYSQL_USER || process.env.DB_USER || 'root',
                     password: process.env.RAILWAY_MYSQL_PASSWORD || process.env.DB_PASSWORD || '@nzali2006',
                     port: process.env.RAILWAY_MYSQL_PORT || process.env.DB_PORT || 3306,
+                    database: process.env.RAILWAY_MYSQL_DATABASE_NAME || process.env.DB_NAME || 'database',
                     ssl: process.env.RAILWAY_ENVIRONMENT ? { 
                         rejectUnauthorized: false,
                         mode: 'REQUIRED'
@@ -67,7 +68,7 @@ async function retryDatabaseConnection(maxRetries = 5, delayMs = 3000) {
                 user: connectionConfig.user,
                 password: connectionConfig.password ? '[SET]' : '[NOT SET]',
                 port: connectionConfig.port,
-                database: connectionConfig.database || 'railway',
+                database: connectionConfig.database || 'database',
                 ssl: connectionConfig.ssl ? 'ENABLED' : 'DISABLED',
                 railwayEnv: process.env.RAILWAY_ENVIRONMENT ? 'YES' : 'NO',
                 railwayMysqlUrl: process.env.RAILWAY_SERVICE_MYSQL_URL ? '[SET]' : '[NOT SET]',
@@ -141,7 +142,7 @@ async function initializeDatabase() {
         if (pool && pool.config && pool.config.database) {
             dbName = pool.config.database;
         } else {
-            dbName = process.env.RAILWAY_MYSQL_DATABASE_NAME || process.env.DB_NAME || 'railway';
+            dbName = process.env.RAILWAY_MYSQL_DATABASE_NAME || process.env.DB_NAME || 'database';
         }
         
         console.log(`📁 Using database: ${dbName}`);

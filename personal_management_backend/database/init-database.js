@@ -126,13 +126,13 @@ async function retryDatabaseConnection(maxRetries = 5, delayMs = 3000) {
                     console.log('✅ Using hostname with credentials');
                 }
             } else {
-                // Use the complete Railway MySQL URL with root user
+                // Use the complete Railway MySQL URL with root user, but connect without database first
                 console.log('🌐 Using complete Railway MySQL URL...');
-                const mysqlUrl = 'mysql://root:ELgFXlNvQaWYcgqOjqRHrHrRxwGhnKMn@mysql.railway.internal:3306/database';
+                const mysqlUrl = 'mysql://root:ELgFXlNvQaWYcgqOjqRHrHrRxwGhnKMn@mysql.railway.internal:3306';
                 
                 try {
-                    // Parse mysql://user:password@host:port/database
-                    const urlPattern = /^mysql:\/\/([^:]+):([^@]+)@([^:]+):(\d+)\/(.+)$/;
+                    // Parse mysql://user:password@host:port (no database)
+                    const urlPattern = /^mysql:\/\/([^:]+):([^@]+)@([^:]+):(\d+)$/;
                     const match = mysqlUrl.match(urlPattern);
                     
                     if (match) {
@@ -141,14 +141,15 @@ async function retryDatabaseConnection(maxRetries = 5, delayMs = 3000) {
                             user: match[1],
                             password: match[2],
                             port: parseInt(match[4]),
-                            database: match[5],
+                            // Don't specify database initially - we'll create it
                             ssl: { rejectUnauthorized: false },
                             connectTimeout: 10000,
                             charset: 'utf8mb4'
                         };
-                        console.log('✅ Successfully parsed Railway MySQL URL');
+                        console.log('✅ Successfully parsed Railway MySQL URL (no database)');
                         console.log('🔧 Using host:', match[3]);
                         console.log('👤 Using user:', match[1]);
+                        console.log('📦 Will create database "database" after connection');
                     } else {
                         throw new Error('Invalid MySQL URL format');
                     }
@@ -233,20 +234,13 @@ async function initializeDatabase() {
         pool = await retryDatabaseConnection(5, 3000);
 
         // Create database if not exists
-        let dbName;
-        if (pool && pool.config && pool.config.database) {
-            dbName = pool.config.database;
-        } else {
-            dbName = process.env.RAILWAY_MYSQL_DATABASE_NAME || process.env.DB_NAME || 'database';
-        }
+        const dbName = 'database';
+        console.log(`📁 Creating/using database: ${dbName}`);
         
-        console.log(`📁 Using database: ${dbName}`);
-        
-        // Don't try to create database if we're using the one from Railway URL
-        if (!process.env.RAILWAY_SERVICE_MYSQL_URL) {
-            await pool.execute(`CREATE DATABASE IF NOT EXISTS ${dbName}`);
-            await pool.execute(`USE ${dbName}`);
-        }
+        // Create database first, then use it
+        await pool.execute(`CREATE DATABASE IF NOT EXISTS ${dbName}`);
+        await pool.execute(`USE ${dbName}`);
+        console.log(`✅ Database '${dbName}' is ready`);
 
         // Create tables
         const tables = [

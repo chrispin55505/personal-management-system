@@ -49,6 +49,12 @@ async function initDatabase() {
 // Initialize database
 initDatabase();
 
+// Import API routes
+const apiRoutes = require('./routes/api-simple');
+
+// Use API routes
+app.use('/api', apiRoutes);
+
 // Health check
 app.get('/health', (req, res) => {
     res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });

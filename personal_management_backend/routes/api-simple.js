@@ -143,8 +143,25 @@ async function logActivity(pool, description, type, status = 'completed') {
             [description, type, status, 1]
         );
         console.log(`✅ Activity logged with ID: ${result.insertId}`);
+        
+        // Clean up old activities (older than 30 days)
+        await cleanupOldActivities(pool);
     } catch (error) {
         console.error('❌ Failed to log activity:', error);
+    }
+}
+
+// Helper function to clean up activities older than 30 days
+async function cleanupOldActivities(pool) {
+    try {
+        const [result] = await pool.query(
+            'DELETE FROM activities WHERE created_at < DATE_SUB(NOW(), INTERVAL 30 DAY)'
+        );
+        if (result.affectedRows > 0) {
+            console.log(`🧹 Cleaned up ${result.affectedRows} old activities (older than 30 days)`);
+        }
+    } catch (error) {
+        console.error('❌ Failed to cleanup old activities:', error);
     }
 }
 
@@ -429,6 +446,10 @@ router.post('/money', async (req, res) => {
         );
         
         console.log(`✅ Money record added with ID: ${result.insertId}`);
+        
+        // Log activity
+        await logActivity(pool, `Added money record: ${person} owes ${parseFloat(amount).toLocaleString()} TZS`, 'money', 'added');
+        
         return sendApiResponse(res, true, { 
             id: result.insertId, 
             message: 'Money record added successfully' 
@@ -567,11 +588,15 @@ router.post('/savings', async (req, res) => {
         }
         
         const [result] = await pool.query(
-            'INSERT INTO savings (amount, date, user_id) VALUES (?, ?, ?)',
+            'INSERT INTO savings (amount, savings_date, user_id) VALUES (?, ?, ?)',
             [parseFloat(amount), date, 1]
         );
         
         console.log(`✅ Savings record added with ID: ${result.insertId}`);
+        
+        // Log activity
+        await logActivity(pool, `Added savings: ${parseFloat(amount).toLocaleString()} TZS`, 'savings', 'added');
+        
         res.json({ id: result.insertId, success: true, message: 'Savings record added successfully' });
     } catch (error) {
         console.error('❌ Savings insert error:', error);
@@ -648,6 +673,10 @@ router.put('/journeys/:id/status', async (req, res) => {
         }
         
         console.log(`✅ Journey ${id} status updated to ${status}`);
+        
+        // Log activity
+        await logActivity(pool, `Updated journey status to ${status}`, 'journey', 'status_updated');
+        
         res.json({ success: true, message: `Journey marked as ${status}` });
     } catch (error) {
         console.error('❌ Journey status update error:', error);
@@ -672,6 +701,10 @@ router.delete('/money/:id', async (req, res) => {
         }
         
         console.log(`✅ Money record ${id} deleted`);
+        
+        // Log activity
+        await logActivity(pool, `Deleted money record`, 'money', 'deleted');
+        
         res.json({ success: true, message: 'Money record deleted successfully' });
     } catch (error) {
         console.error('❌ Money delete error:', error);
@@ -693,6 +726,10 @@ router.delete('/modules/:id', async (req, res) => {
         }
         
         console.log(`✅ Module ${id} deleted`);
+        
+        // Log activity
+        await logActivity(pool, `Deleted module`, 'module', 'deleted');
+        
         res.json({ success: true, message: 'Module deleted successfully' });
     } catch (error) {
         console.error('❌ Module delete error:', error);
@@ -714,6 +751,10 @@ router.delete('/appointments/:id', async (req, res) => {
         }
         
         console.log(`✅ Appointment ${id} deleted`);
+        
+        // Log activity
+        await logActivity(pool, `Deleted appointment`, 'appointment', 'deleted');
+        
         res.json({ success: true, message: 'Appointment deleted successfully' });
     } catch (error) {
         console.error('❌ Appointment delete error:', error);
@@ -735,6 +776,10 @@ router.delete('/journeys/:id', async (req, res) => {
         }
         
         console.log(`✅ Journey ${id} deleted`);
+        
+        // Log activity
+        await logActivity(pool, `Deleted journey`, 'journey', 'deleted');
+        
         res.json({ success: true, message: 'Journey deleted successfully' });
     } catch (error) {
         console.error('❌ Journey delete error:', error);
@@ -755,7 +800,11 @@ router.delete('/savings/:id', async (req, res) => {
             return res.status(404).json({ error: 'Savings record not found' });
         }
         
-        console.log(`✅ Savings record ${id} deleted`);
+        console.log(`✅ Savings ${id} deleted`);
+        
+        // Log activity
+        await logActivity(pool, `Deleted savings record`, 'savings', 'deleted');
+        
         res.json({ success: true, message: 'Savings record deleted successfully' });
     } catch (error) {
         console.error('❌ Savings delete error:', error);
@@ -780,6 +829,10 @@ router.put('/appointments/:id/complete', async (req, res) => {
         }
         
         console.log(`✅ Appointment ${id} marked as completed`);
+        
+        // Log activity
+        await logActivity(pool, `Completed appointment`, 'appointment', 'completed');
+        
         res.json({ success: true, message: 'Appointment marked as completed' });
     } catch (error) {
         console.error('❌ Appointment complete error:', error);
@@ -807,6 +860,10 @@ router.put('/money/:id/return', async (req, res) => {
         }
         
         console.log(`✅ Money record ${id} marked as returned`);
+        
+        // Log activity
+        await logActivity(pool, `Marked money as returned`, 'money', 'returned');
+        
         res.json({ success: true, message: 'Money marked as returned' });
     } catch (error) {
         console.error('❌ Money return error:', error);

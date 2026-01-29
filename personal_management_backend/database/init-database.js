@@ -331,6 +331,16 @@ async function initializeDatabase() {
 
         // Create all tables
         for (const table of tables) {
+            // Special handling for timetable table to fix potential schema issues
+            if (table.includes('CREATE TABLE IF NOT EXISTS timetable')) {
+                try {
+                    // Drop and recreate timetable table to ensure correct schema
+                    await pool.query('DROP TABLE IF EXISTS timetable');
+                    console.log('🗑️ Dropped existing timetable table');
+                } catch (dropError) {
+                    console.log('ℹ️ Timetable table did not exist or could not be dropped');
+                }
+            }
             await pool.query(table);
         }
 

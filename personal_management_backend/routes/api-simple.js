@@ -145,7 +145,7 @@ router.get('/dashboard/stats', async (req, res) => {
         let moduleCount = 0, appointmentCount = 0, moneyOwed = 0, journeyCount = 0;
         
         try {
-            const [modules] = await pool.execute('SELECT COUNT(*) as count FROM modules');
+            const [modules] = await pool.query('SELECT COUNT(*) as count FROM modules');
             moduleCount = modules[0].count || 0;
             console.log(`📚 Modules count: ${moduleCount}`);
         } catch (err) {
@@ -153,7 +153,7 @@ router.get('/dashboard/stats', async (req, res) => {
         }
         
         try {
-            const [appointments] = await pool.execute('SELECT COUNT(*) as count FROM appointments WHERE status = "upcoming"');
+            const [appointments] = await pool.query('SELECT COUNT(*) as count FROM appointments WHERE status = "upcoming"');
             appointmentCount = appointments[0].count || 0;
             console.log(`📅 Appointments count: ${appointmentCount}`);
         } catch (err) {
@@ -161,7 +161,7 @@ router.get('/dashboard/stats', async (req, res) => {
         }
         
         try {
-            const [money] = await pool.execute('SELECT SUM(amount) as total FROM money_records WHERE status = "pending"');
+            const [money] = await pool.query('SELECT SUM(amount) as total FROM money_records WHERE status = "pending"');
             moneyOwed = money[0].total || 0;
             console.log(`💰 Money owed: ${moneyOwed}`);
         } catch (err) {
@@ -169,7 +169,7 @@ router.get('/dashboard/stats', async (req, res) => {
         }
         
         try {
-            const [journeys] = await pool.execute('SELECT COUNT(*) as count FROM journeys WHERE status = "pending"');
+            const [journeys] = await pool.query('SELECT COUNT(*) as count FROM journeys WHERE status = "pending"');
             journeyCount = journeys[0].count || 0;
             console.log(`🚗 Journeys count: ${journeyCount}`);
         } catch (err) {
@@ -196,7 +196,7 @@ router.get('/timetable', async (req, res) => {
     try {
         const { pool } = require('../config/database-simple');
         console.log('📅 Loading timetable...');
-        const [rows] = await pool.execute('SELECT * FROM timetable ORDER BY exam_date');
+        const [rows] = await pool.query('SELECT * FROM timetable ORDER BY exam_date');
         console.log(`✅ Loaded ${rows.length} timetable entries`);
         res.json(rows);
     } catch (error) {
@@ -220,7 +220,7 @@ router.post('/timetable', async (req, res) => {
             });
         }
         
-        const [result] = await pool.execute(
+        const [result] = await pool.query(
             'INSERT INTO timetable (module_code, module_name, exam_date, exam_time, venue, user_id) VALUES (?, ?, ?, ?, ?, ?)',
             [moduleCode, moduleName, date, time, venue || '', 1]
         );
@@ -243,7 +243,7 @@ router.delete('/timetable/:id', async (req, res) => {
         
         console.log(`🗑️ Deleting timetable entry ID: ${id}`);
         
-        const [result] = await pool.execute('DELETE FROM timetable WHERE id = ?', [id]);
+        const [result] = await pool.query('DELETE FROM timetable WHERE id = ?', [id]);
         
         if (result.affectedRows === 0) {
             return res.status(404).json({ error: 'Timetable entry not found' });
@@ -262,7 +262,7 @@ router.get('/modules', async (req, res) => {
     try {
         const { pool } = require('../config/database-simple');
         console.log('📚 Loading modules...');
-        const [rows] = await pool.execute('SELECT * FROM modules ORDER BY code');
+        const [rows] = await pool.query('SELECT * FROM modules ORDER BY code');
         console.log(`✅ Loaded ${rows.length} modules`);
         res.json(rows);
     } catch (error) {
@@ -286,7 +286,7 @@ router.post('/modules', async (req, res) => {
             throw validationError;
         }
         
-        const [result] = await pool.execute(
+        const [result] = await pool.query(
             'INSERT INTO modules (code, name, lecturer, semester, year, user_id) VALUES (?, ?, ?, ?, ?, ?)',
             [code, name, lecturer || '', semester || 1, year || 1, 1]
         );
@@ -317,7 +317,7 @@ router.post('/money', async (req, res) => {
             throw validationError;
         }
         
-        const [result] = await pool.execute(
+        const [result] = await pool.query(
             'INSERT INTO money_records (person_name, amount, borrow_date, expected_return_date, user_id) VALUES (?, ?, ?, ?, ?)',
             [person, parseFloat(amount), borrowDate, returnDate || null, 1]
         );
@@ -348,7 +348,7 @@ router.post('/appointments', async (req, res) => {
             throw validationError;
         }
         
-        const [result] = await pool.execute(
+        const [result] = await pool.query(
             'INSERT INTO appointments (name, place, appointment_date, appointment_time, aim, notification, user_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
             [name, place || '', date, time, aim || '', notification || 'none', 1]
         );
@@ -369,7 +369,7 @@ router.get('/journeys', async (req, res) => {
     try {
         const { pool } = require('../config/database-simple');
         console.log('🚗 Loading journeys...');
-        const [rows] = await pool.execute('SELECT * FROM journeys ORDER BY journey_date');
+        const [rows] = await pool.query('SELECT * FROM journeys ORDER BY journey_date');
         console.log(`✅ Loaded ${rows.length} journeys`);
         res.json(rows);
     } catch (error) {
@@ -396,7 +396,7 @@ router.post('/journeys', async (req, res) => {
         const transport = parseFloat(transportCost) || 0;
         const food = parseFloat(foodCost) || 0;
         
-        const [result] = await pool.execute(
+        const [result] = await pool.query(
             'INSERT INTO journeys (journey_from, journey_to, journey_date, journey_time, transport_cost, food_cost, user_id, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
             [from, to, date, time || '00:00', transport, food, 1, status || 'pending']
         );
@@ -417,7 +417,7 @@ router.get('/activities', async (req, res) => {
     try {
         const { pool } = require('../config/database-simple');
         console.log('📋 Loading activities...');
-        const [rows] = await pool.execute('SELECT * FROM activities ORDER BY created_at DESC LIMIT 10');
+        const [rows] = await pool.query('SELECT * FROM activities ORDER BY created_at DESC LIMIT 10');
         console.log(`✅ Loaded ${rows.length} activities`);
         res.json(rows);
     } catch (error) {

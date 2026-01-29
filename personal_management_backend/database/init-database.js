@@ -238,8 +238,8 @@ async function initializeDatabase() {
         console.log(`📁 Creating/using database: ${dbName}`);
         
         // Create database first, then use it
-        await pool.execute(`CREATE DATABASE IF NOT EXISTS \`railway\``);
-        await pool.execute(`USE \`railway\``);
+        await pool.query(`CREATE DATABASE IF NOT EXISTS \`railway\``);
+        await pool.query(`USE \`railway\``);
         console.log(`✅ Database 'railway' is ready`);
 
         // Create tables

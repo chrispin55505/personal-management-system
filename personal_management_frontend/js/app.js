@@ -324,28 +324,34 @@ class PersonalManagementApp {
     // Dashboard methods
     async loadDashboardData() {
         try {
+            console.log('🔄 Loading dashboard data...');
             const data = await this.apiCall('/dashboard/stats');
+            console.log('📊 Dashboard data received:', data);
             
-            // Update dashboard with animated counters
+            // Update dashboard with animated counters - only update existing elements
             this.animateCounter('moduleCount', data.moduleCount || 0);
             this.animateCounter('appointmentCount', data.appointmentCount || 0);
-            this.animateCounter('appointmentCompleted', data.appointmentCompleted || 0);
             this.animateCounter('moneyOwed', data.moneyOwed || 0);
-            this.animateCounter('moneyReturned', data.moneyReturned || 0);
             this.animateCounter('journeyCount', data.journeyCount || 0);
+            
+            // Try to update additional elements if they exist
+            this.animateCounter('appointmentCompleted', data.appointmentCompleted || 0);
+            this.animateCounter('moneyReturned', data.moneyReturned || 0);
             this.animateCounter('journeyCompleted', data.journeyCompleted || 0);
             this.animateCounter('savingsTotal', data.savingsTotal || 0);
             this.animateCounter('examCount', data.examCount || 0);
             this.animateCounter('recentActivityCount', data.recentActivityCount || 0);
             
-            // Update progress bars and percentages
+            // Update progress bars and percentages if elements exist
             this.updateProgressBars(data);
             
             // Load recent activities
             await this.loadRecentActivities();
             
+            console.log('✅ Dashboard data loaded and updated');
         } catch (error) {
-            console.error('Failed to load dashboard data:', error);
+            console.error('❌ Failed to load dashboard data:', error);
+            alert('Failed to load dashboard data. Please try refreshing the page.');
         }
     }
 
@@ -393,11 +399,18 @@ class PersonalManagementApp {
 
     animateCounter(elementId, targetValue) {
         const element = document.getElementById(elementId);
+        if (!element) {
+            console.log(`⚠️ Dashboard element '${elementId}' not found - skipping update`);
+            return;
+        }
+        
         const startValue = parseInt(element.textContent) || 0;
         const duration = 1000; // 1 second animation
         const steps = 30;
         const increment = (targetValue - startValue) / steps;
         let currentStep = 0;
+        
+        console.log(`🔄 Animating counter '${elementId}': ${startValue} → ${targetValue}`);
         
         const timer = setInterval(() => {
             currentStep++;
@@ -407,6 +420,7 @@ class PersonalManagementApp {
             if (currentStep >= steps) {
                 element.textContent = targetValue.toLocaleString();
                 clearInterval(timer);
+                console.log(`✅ Counter '${elementId}' animation complete: ${targetValue}`);
             }
         }, duration / steps);
     }

@@ -329,6 +329,7 @@ class PersonalManagementApp {
             console.log('📊 Dashboard data received:', data);
             
             // Update dashboard with animated counters - only update existing elements
+            console.log('🔄 Updating dashboard counters...');
             this.animateCounter('moduleCount', data.moduleCount || 0);
             this.animateCounter('appointmentCount', data.appointmentCount || 0);
             this.animateCounter('moneyOwed', data.moneyOwed || 0);
@@ -348,10 +349,60 @@ class PersonalManagementApp {
             // Load recent activities
             await this.loadRecentActivities();
             
-            console.log('✅ Dashboard data loaded and updated');
+            console.log('✅ Dashboard data loaded and updated successfully');
+            
+            // Force a visual update to ensure changes are visible
+            this.forceDashboardUpdate();
+            
         } catch (error) {
             console.error('❌ Failed to load dashboard data:', error);
             alert('Failed to load dashboard data. Please try refreshing the page.');
+        }
+    }
+
+    forceDashboardUpdate() {
+        // Force a visual update by manually updating the display
+        console.log('🔄 Forcing dashboard visual update...');
+        
+        const moduleCount = document.getElementById('moduleCount');
+        const appointmentCount = document.getElementById('appointmentCount');
+        const moneyOwed = document.getElementById('moneyOwed');
+        const journeyCount = document.getElementById('journeyCount');
+        
+        if (moduleCount) {
+            const currentValue = moduleCount.textContent;
+            moduleCount.textContent = '0';
+            setTimeout(() => {
+                moduleCount.textContent = currentValue;
+                console.log('🔄 Module count updated:', currentValue);
+            }, 100);
+        }
+        
+        if (appointmentCount) {
+            const currentValue = appointmentCount.textContent;
+            appointmentCount.textContent = '0';
+            setTimeout(() => {
+                appointmentCount.textContent = currentValue;
+                console.log('🔄 Appointment count updated:', currentValue);
+            }, 100);
+        }
+        
+        if (moneyOwed) {
+            const currentValue = moneyOwed.textContent;
+            moneyOwed.textContent = '0';
+            setTimeout(() => {
+                moneyOwed.textContent = currentValue;
+                console.log('🔄 Money owed updated:', currentValue);
+            }, 100);
+        }
+        
+        if (journeyCount) {
+            const currentValue = journeyCount.textContent;
+            journeyCount.textContent = '0';
+            setTimeout(() => {
+                journeyCount.textContent = currentValue;
+                console.log('🔄 Journey count updated:', currentValue);
+            }, 100);
         }
     }
 

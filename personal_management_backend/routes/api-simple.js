@@ -137,11 +137,12 @@ const authController = require('../controllers/authController-simple');
 // Helper function to log activities
 async function logActivity(pool, description, type, status = 'completed') {
     try {
-        await pool.query(
+        console.log(`📝 Logging activity: ${description} (${type})`);
+        const [result] = await pool.query(
             'INSERT INTO activities (description, type, status, user_id) VALUES (?, ?, ?, ?)',
             [description, type, status, 1]
         );
-        console.log(`📝 Activity logged: ${description}`);
+        console.log(`✅ Activity logged with ID: ${result.insertId}`);
     } catch (error) {
         console.error('❌ Failed to log activity:', error);
     }

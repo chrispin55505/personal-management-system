@@ -371,9 +371,24 @@ class PersonalManagementApp {
 
     async loadRecentActivities() {
         try {
+            console.log('🔄 Loading recent activities...');
             const activities = await this.apiCall('/activities');
+            console.log('📋 Activities loaded:', activities);
+            
             const tbody = document.getElementById('recentActivities');
+            if (!tbody) {
+                console.error('❌ recentActivities tbody not found');
+                return;
+            }
+            
             tbody.innerHTML = '';
+
+            if (!activities || activities.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = `<td colspan="4" style="text-align: center; color: #666;">No recent activities</td>`;
+                tbody.appendChild(row);
+                return;
+            }
 
             activities.slice(0, 5).forEach(activity => {
                 const row = document.createElement('tr');
@@ -385,8 +400,14 @@ class PersonalManagementApp {
                 `;
                 tbody.appendChild(row);
             });
+            
+            console.log(`✅ Displayed ${Math.min(5, activities.length)} activities`);
         } catch (error) {
-            console.error('Failed to load activities:', error);
+            console.error('❌ Failed to load activities:', error);
+            const tbody = document.getElementById('recentActivities');
+            if (tbody) {
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: red;">Failed to load activities</td></tr>`;
+            }
         }
     }
 

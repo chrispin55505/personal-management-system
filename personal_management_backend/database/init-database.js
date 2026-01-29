@@ -380,6 +380,16 @@ async function initializeDatabase() {
                     console.log('ℹ️ Appointments table did not exist or could not be dropped');
                 }
             }
+            // Special handling for activities table to fix potential schema issues
+            if (table.includes('CREATE TABLE IF NOT EXISTS activities')) {
+                try {
+                    // Drop and recreate activities table to ensure correct schema
+                    await pool.query('DROP TABLE IF EXISTS activities');
+                    console.log('🗑️ Dropped existing activities table');
+                } catch (dropError) {
+                    console.log('ℹ️ Activities table did not exist or could not be dropped');
+                }
+            }
             await pool.query(table);
         }
 

@@ -360,6 +360,26 @@ async function initializeDatabase() {
                     console.log('ℹ️ Savings table did not exist or could not be dropped');
                 }
             }
+            // Special handling for journeys table to fix potential schema issues
+            if (table.includes('CREATE TABLE IF NOT EXISTS journeys')) {
+                try {
+                    // Drop and recreate journeys table to ensure correct schema
+                    await pool.query('DROP TABLE IF EXISTS journeys');
+                    console.log('🗑️ Dropped existing journeys table');
+                } catch (dropError) {
+                    console.log('ℹ️ Journeys table did not exist or could not be dropped');
+                }
+            }
+            // Special handling for appointments table to fix potential schema issues
+            if (table.includes('CREATE TABLE IF NOT EXISTS appointments')) {
+                try {
+                    // Drop and recreate appointments table to ensure correct schema
+                    await pool.query('DROP TABLE IF EXISTS appointments');
+                    console.log('🗑️ Dropped existing appointments table');
+                } catch (dropError) {
+                    console.log('ℹ️ Appointments table did not exist or could not be dropped');
+                }
+            }
             await pool.query(table);
         }
 

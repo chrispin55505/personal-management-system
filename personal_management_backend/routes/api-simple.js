@@ -172,47 +172,99 @@ router.get('/dashboard/stats', async (req, res) => {
         
         console.log('📊 Loading dashboard stats...');
         
-        // Get basic counts with error handling for each query
-        let moduleCount = 0, appointmentCount = 0, moneyOwed = 0, journeyCount = 0;
+        // Get comprehensive stats with error handling
+        let stats = {
+            moduleCount: 0,
+            appointmentCount: 0,
+            appointmentCompleted: 0,
+            moneyOwed: 0,
+            moneyReturned: 0,
+            journeyCount: 0,
+            journeyCompleted: 0,
+            savingsTotal: 0,
+            examCount: 0,
+            recentActivityCount: 0
+        };
         
         try {
             const [modules] = await pool.query('SELECT COUNT(*) as count FROM modules');
-            moduleCount = modules[0].count || 0;
-            console.log(`📚 Modules count: ${moduleCount}`);
+            stats.moduleCount = modules[0].count || 0;
+            console.log(`📚 Modules count: ${stats.moduleCount}`);
         } catch (err) {
             console.error('⚠️ Error getting modules count:', err.message);
         }
         
         try {
             const [appointments] = await pool.query('SELECT COUNT(*) as count FROM appointments WHERE status = "upcoming"');
-            appointmentCount = appointments[0].count || 0;
-            console.log(`📅 Appointments count: ${appointmentCount}`);
+            stats.appointmentCount = appointments[0].count || 0;
+            console.log(`📅 Upcoming appointments: ${stats.appointmentCount}`);
         } catch (err) {
             console.error('⚠️ Error getting appointments count:', err.message);
         }
         
         try {
-            const [money] = await pool.query('SELECT SUM(amount) as total FROM money_records WHERE status = "pending"');
-            moneyOwed = money[0].total || 0;
-            console.log(`💰 Money owed: ${moneyOwed}`);
+            const [appointmentsCompleted] = await pool.query('SELECT COUNT(*) as count FROM appointments WHERE status = "completed"');
+            stats.appointmentCompleted = appointmentsCompleted[0].count || 0;
+            console.log(`✅ Completed appointments: ${stats.appointmentCompleted}`);
         } catch (err) {
-            console.error('⚠️ Error getting money total:', err.message);
+            console.error('⚠️ Error getting completed appointments count:', err.message);
         }
         
         try {
-            const [journeys] = await pool.query('SELECT COUNT(*) as count FROM journeys WHERE status = "pending"');
-            journeyCount = journeys[0].count || 0;
-            console.log(`🚗 Journeys count: ${journeyCount}`);
+            const [money] = await pool.query('SELECT SUM(amount) as total FROM money_records WHERE status = "pending"');
+            stats.moneyOwed = money[0].total || 0;
+            console.log(`💰 Money owed: ${stats.moneyOwed}`);
+        } catch (err) {
+            console.error('⚠️ Error getting money owed:', err.message);
+        }
+        
+        try {
+            const [moneyReturned] = await pool.query('SELECT SUM(amount) as total FROM money_records WHERE status = "returned"');
+            stats.moneyReturned = moneyReturned[0].total || 0;
+            console.log(`💰 Money returned: ${stats.moneyReturned}`);
+        } catch (err) {
+            console.error('⚠️ Error getting money returned:', err.message);
+        }
+        
+        try {
+            const [journeys] = await pool.query('SELECT COUNT(*) as count FROM journeys');
+            stats.journeyCount = journeys[0].count || 0;
+            console.log(`🚗 Total journeys: ${stats.journeyCount}`);
         } catch (err) {
             console.error('⚠️ Error getting journeys count:', err.message);
         }
         
-        const stats = {
-            moduleCount,
-            appointmentCount,
-            moneyOwed,
-            journeyCount
-        };
+        try {
+            const [journeysCompleted] = await pool.query('SELECT COUNT(*) as count FROM journeys WHERE status = "completed"');
+            stats.journeyCompleted = journeysCompleted[0].count || 0;
+            console.log(`✅ Completed journeys: ${stats.journeyCompleted}`);
+        } catch (err) {
+            console.error('⚠️ Error getting completed journeys count:', err.message);
+        }
+        
+        try {
+            const [savings] = await pool.query('SELECT SUM(amount) as total FROM savings');
+            stats.savingsTotal = savings[0].total || 0;
+            console.log(`💎 Total savings: ${stats.savingsTotal}`);
+        } catch (err) {
+            console.error('⚠️ Error getting savings total:', err.message);
+        }
+        
+        try {
+            const [exams] = await pool.query('SELECT COUNT(*) as count FROM timetable');
+            stats.examCount = exams[0].count || 0;
+            console.log(`📝 Total exams: ${stats.examCount}`);
+        } catch (err) {
+            console.error('⚠️ Error getting exams count:', err.message);
+        }
+        
+        try {
+            const [activities] = await pool.query('SELECT COUNT(*) as count FROM activities WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)');
+            stats.recentActivityCount = activities[0].count || 0;
+            console.log(`📋 Recent activities (7 days): ${stats.recentActivityCount}`);
+        } catch (err) {
+            console.error('⚠️ Error getting recent activities count:', err.message);
+        }
         
         console.log('✅ Dashboard stats loaded successfully:', stats);
         return sendApiResponse(res, true, stats);

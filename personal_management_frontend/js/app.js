@@ -329,16 +329,66 @@ class PersonalManagementApp {
             // Update dashboard with animated counters
             this.animateCounter('moduleCount', data.moduleCount || 0);
             this.animateCounter('appointmentCount', data.appointmentCount || 0);
+            this.animateCounter('appointmentCompleted', data.appointmentCompleted || 0);
             this.animateCounter('moneyOwed', data.moneyOwed || 0);
+            this.animateCounter('moneyReturned', data.moneyReturned || 0);
             this.animateCounter('journeyCount', data.journeyCount || 0);
+            this.animateCounter('journeyCompleted', data.journeyCompleted || 0);
+            this.animateCounter('savingsTotal', data.savingsTotal || 0);
+            this.animateCounter('examCount', data.examCount || 0);
+            this.animateCounter('recentActivityCount', data.recentActivityCount || 0);
+            
+            // Update progress bars and percentages
+            this.updateProgressBars(data);
             
             // Load recent activities
             await this.loadRecentActivities();
             
         } catch (error) {
             console.error('Failed to load dashboard data:', error);
-            this.animateCounter('journeyCount', 0);
         }
+    }
+
+    updateProgressBars(data) {
+        // Calculate percentages for progress bars
+        const appointmentTotal = (data.appointmentCount || 0) + (data.appointmentCompleted || 0);
+        const appointmentCompletion = appointmentTotal > 0 ? (data.appointmentCompleted / appointmentTotal * 100) : 0;
+        
+        const journeyTotal = (data.journeyCount || 0) + (data.journeyCompleted || 0);
+        const journeyCompletion = journeyTotal > 0 ? (data.journeyCompleted / journeyTotal * 100) : 0;
+        
+        const moneyTotal = (data.moneyOwed || 0) + (data.moneyReturned || 0);
+        const moneyReturnRate = moneyTotal > 0 ? (data.moneyReturned / moneyTotal * 100) : 0;
+        
+        // Update progress bars if elements exist
+        this.updateProgressBar('appointmentProgress', appointmentCompletion);
+        this.updateProgressBar('journeyProgress', journeyCompletion);
+        this.updateProgressBar('moneyProgress', moneyReturnRate);
+        
+        // Update status text
+        this.updateStatusText('appointmentStatus', `${data.appointmentCompleted || 0}/${appointmentTotal} completed`);
+        this.updateStatusText('journeyStatus', `${data.journeyCompleted || 0}/${journeyTotal} completed`);
+        this.updateStatusText('moneyStatus', `${this.formatCurrency(data.moneyReturned || 0)} returned`);
+    }
+
+    updateProgressBar(elementId, percentage) {
+        const element = document.getElementById(elementId);
+        if (element) {
+            element.style.width = `${percentage}%`;
+            element.setAttribute('aria-valuenow', percentage);
+            element.textContent = `${Math.round(percentage)}%`;
+        }
+    }
+
+    updateStatusText(elementId, text) {
+        const element = document.getElementById(elementId);
+        if (element) {
+            element.textContent = text;
+        }
+    }
+
+    formatCurrency(amount) {
+        return parseFloat(amount || 0).toLocaleString() + ' TZS';
     }
 
     animateCounter(elementId, targetValue) {
@@ -361,12 +411,25 @@ class PersonalManagementApp {
         }, duration / steps);
     }
 
-    // Auto-refresh dashboard every 30 seconds
+    // Auto-refresh dashboard every 10 seconds for more dynamic updates
     startAutoRefresh() {
-        setInterval(async () => {
+        // Clear any existing interval
+        if (this.autoRefreshInterval) {
+            clearInterval(this.autoRefreshInterval);
+        }
+        
+        this.autoRefreshInterval = setInterval(async () => {
+            console.log('🔄 Auto-refreshing dashboard...');
             await this.loadDashboardData();
-            await this.loadRecentActivities();
-        }, 30000); // 30 seconds
+        }, 10000); // 10 seconds for more dynamic updates
+    }
+
+    // Stop auto-refresh when needed
+    stopAutoRefresh() {
+        if (this.autoRefreshInterval) {
+            clearInterval(this.autoRefreshInterval);
+            this.autoRefreshInterval = null;
+        }
     }
 
     async loadRecentActivities() {
@@ -645,14 +708,19 @@ class PersonalManagementApp {
                 })
             });
 
-            document.getElementById('savingsAmount').value = '';
-            document.getElementById('savingsDate').value = '';
+            this.clearSavingsForm();
             await this.loadSavings();
+            await this.loadDashboardData(); // Real-time dashboard update
             this.showNotification('Savings Added', `Added ${parseFloat(amount).toLocaleString()} TZS to NMB savings`);
         } catch (error) {
             console.error('Failed to add savings:', error);
             alert(`Failed to add savings: ${error.message}`);
         }
+    }
+
+    clearSavingsForm() {
+        document.getElementById('savingsAmount').value = '';
+        document.getElementById('savingsDate').value = '';
     }
 
     // Modules methods
@@ -1227,6 +1295,7 @@ class PersonalManagementApp {
             try {
                 await this.apiCall(`/savings/${id}`, { method: 'DELETE' });
                 await this.loadSavings();
+                await this.loadDashboardData(); // Real-time dashboard update
                 this.showNotification('Savings Deleted', 'Savings record has been deleted successfully');
             } catch (error) {
                 console.error('Failed to delete savings:', error);

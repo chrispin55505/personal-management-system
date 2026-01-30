@@ -419,6 +419,31 @@ router.post('/modules', async (req, res) => {
             throw validationError;
         }
         
+        // Check if modules table exists and has correct structure
+        try {
+            console.log('🔍 Checking modules table structure...');
+            const [tableInfo] = await pool.query('DESCRIBE modules');
+            console.log('✅ Modules table structure:', tableInfo.map(col => `${col.Field}: ${col.Type}`));
+        } catch (describeError) {
+            console.log('⚠️ Modules table check failed, attempting to create it...');
+            
+            // Try to create the modules table manually
+            await pool.query(`
+                CREATE TABLE IF NOT EXISTS modules (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    code VARCHAR(20) NOT NULL,
+                    name VARCHAR(100) NOT NULL,
+                    lecturer VARCHAR(100),
+                    semester INT NOT NULL DEFAULT 1,
+                    year INT NOT NULL DEFAULT 1,
+                    user_id INT DEFAULT 1,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                )
+            `);
+            console.log('✅ Modules table created/fixed');
+        }
+        
         console.log('🔍 Executing INSERT query...');
         const [result] = await pool.query(
             'INSERT INTO modules (code, name, lecturer, semester, year, user_id) VALUES (?, ?, ?, ?, ?, ?)',

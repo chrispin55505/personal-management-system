@@ -1325,6 +1325,48 @@ router.put('/appointments/:id/complete', async (req, res) => {
     }
 });
 
+// Update appointment status endpoint
+router.put('/appointments/:id/status', async (req, res) => {
+    try {
+        const { pool } = require('../config/database-simple');
+        const id = req.params.id;
+        const { status } = req.body;
+        
+        console.log('📅 Updating appointment status:', { id, status });
+        
+        // Validate status
+        const validStatuses = ['upcoming', 'completed', 'cancelled'];
+        if (!validStatuses.includes(status)) {
+            return res.status(400).json({ 
+                error: 'Invalid status',
+                message: 'Status must be one of: upcoming, completed, cancelled'
+            });
+        }
+        
+        const [result] = await pool.query(
+            'UPDATE appointments SET status = ? WHERE id = ?',
+            [status, id]
+        );
+        
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'Appointment not found' });
+        }
+        
+        console.log(`✅ Appointment ${id} status updated to: ${status}`);
+        
+        // Log activity
+        await logActivity(pool, `Updated appointment status to ${status}`, 'appointment', 'updated');
+        
+        return sendApiResponse(res, true, { 
+            message: `Appointment status updated to ${status}`,
+            status: status
+        });
+    } catch (error) {
+        console.error('❌ Appointment status update error:', error);
+        return sendApiResponse(res, false, null, error);
+    }
+});
+
 router.put('/money/:id/return', async (req, res) => {
     try {
         const { pool } = require('../config/database-simple');

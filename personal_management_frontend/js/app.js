@@ -1104,15 +1104,39 @@ class PersonalManagementApp {
                     <td>${appointment.aim || 'N/A'}</td>
                     <td>${this.formatNotification(appointment.notification)}</td>
                     <td>
+                        <select class="status-select status-${appointment.status || 'upcoming'}" data-appointment-id="${appointment.id}" onchange="app.updateAppointmentStatus(${appointment.id}, this.value)">
+                            <option value="upcoming" ${appointment.status === 'upcoming' ? 'selected' : ''}>Upcoming</option>
+                            <option value="completed" ${appointment.status === 'completed' ? 'selected' : ''}>Completed</option>
+                            <option value="cancelled" ${appointment.status === 'cancelled' ? 'selected' : ''}>Cancelled</option>
+                        </select>
+                    </td>
+                    <td>
                         <button class="action-btn edit-btn" onclick="app.editAppointment(${appointment.id})"><i class="fas fa-edit"></i></button>
                         <button class="action-btn delete-btn" onclick="app.deleteAppointment(${appointment.id})"><i class="fas fa-trash"></i></button>
-                        <button class="action-btn" style="background-color: var(--success); color: white;" onclick="app.completeAppointment(${appointment.id})"><i class="fas fa-check"></i></button>
                     </td>
                 `;
                 tbody.appendChild(row);
             });
         } catch (error) {
             console.error('Failed to load appointments:', error);
+        }
+    }
+
+    async updateAppointmentStatus(id, newStatus) {
+        try {
+            await this.apiCall(`/appointments/${id}/status`, {
+                method: 'PUT',
+                body: JSON.stringify({ status: newStatus })
+            });
+            
+            // Reload appointments to reflect the change
+            await this.loadAppointments();
+            await this.loadDashboardData();
+            
+            this.showNotification('Appointment Status Updated', `Appointment marked as ${newStatus}`);
+        } catch (error) {
+            console.error('Failed to update appointment status:', error);
+            alert(`Failed to update appointment status: ${error.message}`);
         }
     }
 

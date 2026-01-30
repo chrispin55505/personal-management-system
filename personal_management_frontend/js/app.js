@@ -622,11 +622,11 @@ class PersonalManagementApp {
             marks.forEach(mark => {
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td>${mark.moduleName}</td>
-                    <td>${mark.lecturer}</td>
+                    <td>${mark.module_name || mark.moduleName || 'N/A'}</td>
+                    <td>${mark.lecturer || 'N/A'}</td>
                     <td>${this.formatCategory(mark.category)}</td>
                     <td>${mark.marks}</td>
-                    <td>${this.formatDate(mark.date)}</td>
+                    <td>${this.formatDate(mark.marks_date || mark.date)}</td>
                     <td>
                         <button class="action-btn edit-btn" onclick="app.editMarks(${mark.id})"><i class="fas fa-edit"></i></button>
                         <button class="action-btn delete-btn" onclick="app.deleteMarks(${mark.id})"><i class="fas fa-trash"></i></button>

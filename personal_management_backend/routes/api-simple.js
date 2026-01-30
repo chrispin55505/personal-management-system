@@ -1370,4 +1370,26 @@ router.get('/activities', async (req, res) => {
     }
 });
 
+// Clear activities endpoint
+router.delete('/activities', async (req, res) => {
+    try {
+        const { pool } = require('../config/database-simple');
+        console.log('🗑️ Clearing all activities...');
+        
+        const [result] = await pool.query('DELETE FROM activities');
+        console.log(`✅ Cleared ${result.affectedRows} activities`);
+        
+        // Log the clear activity itself
+        await logActivity(pool, 'Cleared all recent activities', 'system', 'cleared');
+        
+        return sendApiResponse(res, true, { 
+            message: 'Activities cleared successfully',
+            clearedCount: result.affectedRows
+        });
+    } catch (error) {
+        console.error('❌ Activities clear error:', error);
+        return sendApiResponse(res, false, null, error);
+    }
+});
+
 module.exports = router;

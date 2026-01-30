@@ -64,6 +64,7 @@ class PersonalManagementApp {
         document.getElementById('addAppointmentBtn')?.addEventListener('click', () => this.addAppointment());
         document.getElementById('addJourneyBtn')?.addEventListener('click', () => this.addJourney());
         document.getElementById('addMarksBtn')?.addEventListener('click', () => this.addMarks());
+        document.getElementById('clearActivitiesBtn')?.addEventListener('click', () => this.clearRecentActivities());
 
         // Event delegation for action buttons
         document.addEventListener('click', (e) => {
@@ -542,6 +543,27 @@ class PersonalManagementApp {
             const tbody = document.getElementById('recentActivities');
             if (tbody) {
                 tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: red;">Failed to load activities</td></tr>`;
+            }
+        }
+    }
+
+    // Clear recent activities
+    async clearRecentActivities() {
+        if (confirm('Are you sure you want to clear all recent activities? This action cannot be undone.')) {
+            try {
+                console.log('🗑️ Clearing recent activities...');
+                const result = await this.apiCall('/activities', {
+                    method: 'DELETE'
+                });
+                console.log('✅ Activities cleared:', result);
+                
+                // Reload activities to show empty list
+                await this.loadRecentActivities();
+                
+                this.showNotification('Activities Cleared', 'All recent activities have been cleared successfully');
+            } catch (error) {
+                console.error('❌ Failed to clear activities:', error);
+                alert('Failed to clear activities. Please try again.');
             }
         }
     }

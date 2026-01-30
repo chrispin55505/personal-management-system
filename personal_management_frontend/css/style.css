@@ -431,6 +431,23 @@ header {
     gap: 5px;
 }
 
+.clear-btn {
+    background-color: var(--danger);
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.clear-btn:hover {
+    background-color: #c82333;
+}
+
 .form-row {
     display: flex;
     flex-wrap: wrap;

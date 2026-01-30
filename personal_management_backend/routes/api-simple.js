@@ -569,6 +569,56 @@ router.post('/marks', async (req, res) => {
             throw validationError;
         }
         
+        // Check if marks table exists and has correct structure
+        try {
+            console.log('🔍 Checking marks table structure...');
+            const [tableInfo] = await pool.query('DESCRIBE marks');
+            console.log('✅ Marks table structure:', tableInfo.map(col => `${col.Field}: ${col.Type}`));
+            
+            // Check if id column has AUTO_INCREMENT
+            const idColumn = tableInfo.find(col => col.Field === 'id');
+            if (!idColumn || !idColumn.Extra.includes('auto_increment')) {
+                console.log('⚠️ Marks table id column missing AUTO_INCREMENT, repairing...');
+                
+                // Drop and recreate the marks table with correct structure
+                await pool.query('DROP TABLE IF EXISTS marks');
+                await pool.query(`
+                    CREATE TABLE marks (
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        module_id INT NOT NULL,
+                        module_name VARCHAR(100) NOT NULL,
+                        lecturer VARCHAR(100),
+                        category ENUM('group-assignment', 'individual-assignment', 'test01', 'test02', 'presentation') NOT NULL,
+                        marks DECIMAL(5,2) NOT NULL,
+                        marks_date DATE NOT NULL,
+                        user_id INT DEFAULT 1,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                    )
+                `);
+                console.log('✅ Marks table recreated with AUTO_INCREMENT id');
+            }
+        } catch (describeError) {
+            console.log('⚠️ Marks table check failed, attempting to create it...');
+            
+            // Try to create the marks table manually
+            await pool.query(`
+                CREATE TABLE IF NOT EXISTS marks (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    module_id INT NOT NULL,
+                    module_name VARCHAR(100) NOT NULL,
+                    lecturer VARCHAR(100),
+                    category ENUM('group-assignment', 'individual-assignment', 'test01', 'test02', 'presentation') NOT NULL,
+                    marks DECIMAL(5,2) NOT NULL,
+                    marks_date DATE NOT NULL,
+                    user_id INT DEFAULT 1,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                )
+            `);
+            console.log('✅ Marks table created/fixed');
+        }
+        
         // Get module details
         const [moduleRows] = await pool.query('SELECT * FROM modules WHERE id = ?', [moduleId]);
         if (moduleRows.length === 0) {

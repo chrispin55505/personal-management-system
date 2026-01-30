@@ -573,15 +573,23 @@ router.post('/marks', async (req, res) => {
         try {
             console.log('🔍 Checking marks table structure...');
             const [tableInfo] = await pool.query('DESCRIBE marks');
-            console.log('✅ Marks table structure:', tableInfo.map(col => `${col.Field}: ${col.Type}`));
+            console.log('✅ Marks table structure:', tableInfo.map(col => `${col.Field}: ${col.Type} ${col.Extra || ''}`));
             
             // Check if id column has AUTO_INCREMENT
             const idColumn = tableInfo.find(col => col.Field === 'id');
-            if (!idColumn || !idColumn.Extra.includes('auto_increment')) {
+            console.log('🔍 ID Column details:', idColumn);
+            
+            if (!idColumn) {
+                console.log('❌ ID column not found in marks table');
+            } else if (!idColumn.Extra || !idColumn.Extra.includes('auto_increment')) {
                 console.log('⚠️ Marks table id column missing AUTO_INCREMENT, repairing...');
+                console.log(`🔍 Current ID column Extra: "${idColumn.Extra || 'EMPTY'}"`);
                 
                 // Drop and recreate the marks table with correct structure
+                console.log('🗑️ Dropping marks table...');
                 await pool.query('DROP TABLE IF EXISTS marks');
+                console.log('📝 Creating marks table with AUTO_INCREMENT...');
+                
                 await pool.query(`
                     CREATE TABLE marks (
                         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -597,11 +605,24 @@ router.post('/marks', async (req, res) => {
                     )
                 `);
                 console.log('✅ Marks table recreated with AUTO_INCREMENT id');
+                
+                // Verify the table was created correctly
+                const [newTableInfo] = await pool.query('DESCRIBE marks');
+                const newIdColumn = newTableInfo.find(col => col.Field === 'id');
+                console.log('🔍 New ID Column details:', newIdColumn);
+                
+                if (!newIdColumn.Extra || !newIdColumn.Extra.includes('auto_increment')) {
+                    throw new Error('Failed to create marks table with AUTO_INCREMENT id');
+                }
+            } else {
+                console.log('✅ Marks table id column has AUTO_INCREMENT');
             }
         } catch (describeError) {
             console.log('⚠️ Marks table check failed, attempting to create it...');
+            console.log('❌ Describe error:', describeError.message);
             
             // Try to create the marks table manually
+            console.log('📝 Creating marks table from scratch...');
             await pool.query(`
                 CREATE TABLE IF NOT EXISTS marks (
                     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -629,12 +650,38 @@ router.post('/marks', async (req, res) => {
         
         const module = moduleRows[0];
         
-        const [result] = await pool.query(
-            'INSERT INTO marks (module_id, module_name, lecturer, category, marks, marks_date, user_id) VALUES (?, ?, ?, ?, ?, CURDATE(), ?)',
-            [moduleId, module.name, module.lecturer || '', category || 'test01', parseFloat(marks), 1]
-        );
+        // Try to insert marks with detailed error handling
+        let insertResult;
+        try {
+            console.log('🔍 Executing INSERT query...');
+            insertResult = await pool.query(
+                'INSERT INTO marks (module_id, module_name, lecturer, category, marks, marks_date, user_id) VALUES (?, ?, ?, ?, ?, CURDATE(), ?)',
+                [moduleId, module.name, module.lecturer || '', category || 'test01', parseFloat(marks), 1]
+            );
+            console.log(`✅ Marks added with ID: ${insertResult[0].insertId}`);
+        } catch (insertError) {
+            console.log('❌ INSERT failed, trying alternative approach...');
+            console.log('❌ Insert error:', insertError.message);
+            
+            // If the insert still fails, try to get the next ID manually
+            try {
+                console.log('🔍 Getting next available ID...');
+                const [maxIdResult] = await pool.query('SELECT COALESCE(MAX(id), 0) as maxId FROM marks');
+                const nextId = maxIdResult[0].maxId + 1;
+                console.log(`🔍 Using next ID: ${nextId}`);
+                
+                insertResult = await pool.query(
+                    'INSERT INTO marks (id, module_id, module_name, lecturer, category, marks, marks_date, user_id) VALUES (?, ?, ?, ?, ?, CURDATE(), ?)',
+                    [nextId, moduleId, module.name, module.lecturer || '', category || 'test01', parseFloat(marks), 1]
+                );
+                console.log(`✅ Marks added with manual ID: ${nextId}`);
+            } catch (manualInsertError) {
+                console.log('❌ Manual INSERT also failed:', manualInsertError.message);
+                throw insertError; // Throw the original error
+            }
+        }
         
-        console.log(`✅ Marks added with ID: ${result.insertId}`);
+        const result = insertResult[0];
         
         // Log activity
         await logActivity(pool, `Added marks: ${marks} for ${module.name} (${module.code})`, 'marks', 'added');

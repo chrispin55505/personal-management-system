@@ -568,12 +568,16 @@ class PersonalManagementApp {
         const statusValue = document.getElementById('caStatusValue');
         
         // Always ensure we have valid data - never show null
-        const totalMarks = progressData ? progressData.totalMarks || 0 : 0;
+        const totalModules = progressData ? progressData.totalModules || 0 : 0;
         const percentage = progressData ? progressData.percentage || 0 : 0;
         const status = progressData ? progressData.status || 'failed' : 'failed';
         const modules = progressData ? progressData.modules || [] : [];
+        const excellentModules = progressData ? progressData.excellentModules || 0 : 0;
+        const goodModules = progressData ? progressData.goodModules || 0 : 0;
+        const failedModules = progressData ? progressData.failedModules || 0 : 0;
         
-        console.log(`🔄 Updating CA Display: ${totalMarks} marks, ${percentage}%, status: ${status}`);
+        console.log(`🔄 Updating CA Display: ${totalModules} modules, ${percentage}%, status: ${status}`);
+        console.log(`📊 Module Breakdown: ${excellentModules} Excellent, ${goodModules} Good, ${failedModules} Failed`);
         
         // Calculate progress circle values
         const circumference = 2 * Math.PI * 50; // radius = 50
@@ -617,7 +621,10 @@ class PersonalManagementApp {
             moduleItem.innerHTML = `
                 <div class="module-info">
                     <div class="module-name">${module.moduleName} (${module.moduleCode})</div>
-                    <div class="module-marks">${module.totalMarks} marks from ${module.assessmentCount} assessments</div>
+                    <div class="module-marks">${module.totalMarks}/40 marks from ${module.assessmentCount} assessments</div>
+                </div>
+                <div class="module-status">
+                    <span class="module-status-badge ${module.status}">${module.status.toUpperCase()}</span>
                 </div>
                 <div class="module-progress-bar">
                     <div class="module-progress-fill" style="width: ${module.percentage}%"></div>

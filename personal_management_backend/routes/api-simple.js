@@ -575,24 +575,38 @@ router.get('/ca-marks-progress', async (req, res) => {
         
         console.log(`✅ Found ${moduleMarks.length} modules with marks`);
         
-        // Calculate overall progress - SUM of ALL marks from ALL modules
+        // Calculate per-module progress - Each module has MAX 40 marks
         const MAX_CA_MARKS = 40;
-        let totalMarks = 0;
         const moduleProgress = [];
+        let totalModulesWithMarks = 0;
+        let excellentModules = 0;
+        let goodModules = 0;
+        let failedModules = 0;
         
-        // First, calculate the total marks from all modules
-        moduleMarks.forEach(module => {
-            const marks = parseFloat(module.total_marks);
-            console.log(`🔢 Processing module marks: ${module.total_marks} -> ${marks}`);
-            totalMarks += marks;
-        });
-        
-        console.log(`📈 Total marks from all modules: ${totalMarks} (type: ${typeof totalMarks})`);
-        
-        // Then calculate module progress (for display purposes)
+        // Calculate each module's individual status
         moduleMarks.forEach(module => {
             const moduleMarksValue = parseFloat(module.total_marks);
             const percentage = Math.min((moduleMarksValue / MAX_CA_MARKS) * 100, 100);
+            
+            // Calculate individual module status
+            let moduleStatus = 'failed';
+            let moduleStatusColor = '#dc3545';
+            
+            if (moduleMarksValue >= 26 && moduleMarksValue <= 40) {
+                moduleStatus = 'excellent';
+                moduleStatusColor = '#28a745';
+                excellentModules++;
+            } else if (moduleMarksValue >= 21 && moduleMarksValue <= 25) {
+                moduleStatus = 'good';
+                moduleStatusColor = '#ffc107';
+                goodModules++;
+            } else if (moduleMarksValue >= 0 && moduleMarksValue <= 20) {
+                moduleStatus = 'failed';
+                moduleStatusColor = '#dc3545';
+                failedModules++;
+            }
+            
+            totalModulesWithMarks++;
             
             moduleProgress.push({
                 moduleId: module.module_id,
@@ -601,38 +615,60 @@ router.get('/ca-marks-progress', async (req, res) => {
                 totalMarks: moduleMarksValue,
                 assessmentCount: module.assessment_count,
                 percentage: Math.round(percentage),
-                remainingMarks: Math.max(MAX_CA_MARKS - moduleMarksValue, 0)
+                remainingMarks: Math.max(MAX_CA_MARKS - moduleMarksValue, 0),
+                status: moduleStatus,
+                statusColor: moduleStatusColor
             });
         });
         
-        // Calculate overall percentage based on TOTAL marks from ALL modules
-        const overallPercentage = Math.min((totalMarks / MAX_CA_MARKS) * 100, 100);
-        let status = 'failed';
-        let statusColor = '#dc3545';
+        // Calculate overall status based on module performance
+        let overallStatus = 'failed';
+        let overallStatusColor = '#dc3545';
+        let overallPercentage = 0;
         
-        // Dynamic status based on TOTAL marks
-        if (totalMarks >= 26 && totalMarks <= 40) {
-            status = 'excellent';
-            statusColor = '#28a745';
-        } else if (totalMarks >= 20 && totalMarks <= 25) {
-            status = 'good';
-            statusColor = '#ffc107';
-        } else if (totalMarks > 40) {
-            status = 'excellent';
-            statusColor = '#28a745';
+        if (totalModulesWithMarks > 0) {
+            // Calculate overall percentage as average of all module percentages
+            const totalPercentage = moduleProgress.reduce((sum, module) => sum + module.percentage, 0);
+            overallPercentage = Math.round(totalPercentage / totalModulesWithMarks);
+            
+            // Overall status based on module performance distribution
+            if (excellentModules === totalModulesWithMarks) {
+                // All modules are excellent
+                overallStatus = 'excellent';
+                overallStatusColor = '#28a745';
+            } else if (excellentModules > 0 || goodModules > 0) {
+                // Some modules are good or excellent
+                const goodOrExcellentCount = excellentModules + goodModules;
+                if (goodOrExcellentCount >= totalModulesWithMarks * 0.6) {
+                    overallStatus = 'good';
+                    overallStatusColor = '#ffc107';
+                } else {
+                    overallStatus = 'failed';
+                    overallStatusColor = '#dc3545';
+                }
+            } else {
+                // All modules are failed
+                overallStatus = 'failed';
+                overallStatusColor = '#dc3545';
+            }
         }
         
+        console.log(`📊 Module Status Summary: ${excellentModules} Excellent, ${goodModules} Good, ${failedModules} Failed`);
+        console.log(`📈 Overall Status: ${overallStatus} (${overallPercentage}%)`);
+        
         const progressData = {
-            totalMarks: parseFloat(totalMarks),
-            maxMarks: MAX_CA_MARKS,
-            percentage: Math.round(overallPercentage),
-            remainingMarks: Math.max(MAX_CA_MARKS - totalMarks, 0),
-            status: status,
-            statusColor: statusColor,
+            totalModules: totalModulesWithMarks,
+            excellentModules: excellentModules,
+            goodModules: goodModules,
+            failedModules: failedModules,
+            maxMarksPerModule: MAX_CA_MARKS,
+            percentage: overallPercentage,
+            status: overallStatus,
+            statusColor: overallStatusColor,
             modules: moduleProgress
         };
         
-        console.log(`📈 CA Progress: ${totalMarks}/${MAX_CA_MARKS} (${Math.round(overallPercentage)}%) - Status: ${status}`);
+        console.log(`📈 CA Progress: ${totalModulesWithMarks} modules - ${overallPercentage}% - Status: ${overallStatus}`);
         
         return sendApiResponse(res, true, progressData);
     } catch (error) {

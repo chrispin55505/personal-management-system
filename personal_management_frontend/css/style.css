@@ -161,6 +161,34 @@
     text-align: right;
 }
 
+.module-status {
+    margin-right: 15px;
+}
+
+.module-status-badge {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.module-status-badge.failed {
+    background: #dc3545;
+    color: white;
+}
+
+.module-status-badge.good {
+    background: #ffc107;
+    color: #212529;
+}
+
+.module-status-badge.excellent {
+    background: #28a745;
+    color: white;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .ca-marks-progress-container {

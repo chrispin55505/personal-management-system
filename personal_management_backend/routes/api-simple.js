@@ -655,6 +655,7 @@ router.get('/ca-marks-progress', async (req, res) => {
         
         console.log(`📊 Module Status Summary: ${excellentModules} Excellent, ${goodModules} Good, ${failedModules} Failed`);
         console.log(`📈 Overall Status: ${overallStatus} (${overallPercentage}%)`);
+        console.log(`🔄 Per-Module Calculation Active - v2.0`);
         
         const progressData = {
             totalModules: totalModulesWithMarks,

@@ -567,45 +567,37 @@ class PersonalManagementApp {
         const percentageText = document.getElementById('caPercentage');
         const statusValue = document.getElementById('caStatusValue');
         
-        if (!progressData || !progressData.totalMarks) {
-            // No data case
-            if (progressBar) {
-                progressBar.style.strokeDasharray = '0 314';
-            }
-            if (percentageText) {
-                percentageText.textContent = '0%';
-            }
-            if (statusValue) {
-                statusValue.textContent = 'No Data';
-                statusValue.className = 'status-value';
-            }
-            this.updateModuleProgressList([]);
-            return;
-        }
+        // Always ensure we have valid data - never show null
+        const totalMarks = progressData ? progressData.totalMarks || 0 : 0;
+        const percentage = progressData ? progressData.percentage || 0 : 0;
+        const status = progressData ? progressData.status || 'failed' : 'failed';
+        const modules = progressData ? progressData.modules || [] : [];
+        
+        console.log(`🔄 Updating CA Display: ${totalMarks} marks, ${percentage}%, status: ${status}`);
         
         // Calculate progress circle values
         const circumference = 2 * Math.PI * 50; // radius = 50
-        const offset = circumference - (progressData.percentage / 100) * circumference;
+        const offset = circumference - (percentage / 100) * circumference;
         
-        // Update progress circle
+        // Update progress circle - always show something
         if (progressBar) {
             progressBar.style.strokeDasharray = `${circumference} ${circumference}`;
             progressBar.style.strokeDashoffset = offset;
         }
         
-        // Update percentage text
+        // Update percentage text - always show percentage
         if (percentageText) {
-            percentageText.textContent = `${progressData.percentage}%`;
+            percentageText.textContent = `${percentage}%`;
         }
         
-        // Update status
+        // Update status - always show dynamic status
         if (statusValue) {
-            statusValue.textContent = progressData.status;
-            statusValue.className = `status-value ${progressData.status}`;
+            statusValue.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+            statusValue.className = `status-value ${status}`;
         }
         
         // Update module progress list
-        this.updateModuleProgressList(progressData.modules || []);
+        this.updateModuleProgressList(modules);
     }
 
     updateModuleProgressList(modules) {
@@ -613,7 +605,7 @@ class PersonalManagementApp {
         if (!moduleList) return;
         
         if (!modules || modules.length === 0) {
-            moduleList.innerHTML = '<p style="text-align: center; color: #666;">No CA marks recorded yet</p>';
+            moduleList.innerHTML = '<p style="text-align: center; color: #666;">No CA marks recorded yet. Add marks to see progress!</p>';
             return;
         }
         

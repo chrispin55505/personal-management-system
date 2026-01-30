@@ -575,14 +575,21 @@ router.get('/ca-marks-progress', async (req, res) => {
         
         console.log(`✅ Found ${moduleMarks.length} modules with marks`);
         
-        // Calculate overall progress
+        // Calculate overall progress - SUM of ALL marks from ALL modules
         const MAX_CA_MARKS = 40;
         let totalMarks = 0;
         const moduleProgress = [];
         
+        // First, calculate the total marks from all modules
+        moduleMarks.forEach(module => {
+            totalMarks += parseFloat(module.total_marks);
+        });
+        
+        console.log(`📈 Total marks from all modules: ${totalMarks}`);
+        
+        // Then calculate module progress (for display purposes)
         moduleMarks.forEach(module => {
             const percentage = Math.min((module.total_marks / MAX_CA_MARKS) * 100, 100);
-            totalMarks += module.total_marks;
             
             moduleProgress.push({
                 moduleId: module.module_id,
@@ -595,17 +602,21 @@ router.get('/ca-marks-progress', async (req, res) => {
             });
         });
         
-        // Calculate overall percentage and status
+        // Calculate overall percentage based on TOTAL marks from ALL modules
         const overallPercentage = Math.min((totalMarks / MAX_CA_MARKS) * 100, 100);
         let status = 'failed';
         let statusColor = '#dc3545';
         
+        // Dynamic status based on TOTAL marks
         if (totalMarks >= 26 && totalMarks <= 40) {
             status = 'excellent';
             statusColor = '#28a745';
         } else if (totalMarks >= 20 && totalMarks <= 25) {
             status = 'good';
             statusColor = '#ffc107';
+        } else if (totalMarks > 40) {
+            status = 'excellent';
+            statusColor = '#28a745';
         }
         
         const progressData = {

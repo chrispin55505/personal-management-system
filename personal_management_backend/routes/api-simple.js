@@ -424,6 +424,29 @@ router.post('/modules', async (req, res) => {
             console.log('🔍 Checking modules table structure...');
             const [tableInfo] = await pool.query('DESCRIBE modules');
             console.log('✅ Modules table structure:', tableInfo.map(col => `${col.Field}: ${col.Type}`));
+            
+            // Check if id column has AUTO_INCREMENT
+            const idColumn = tableInfo.find(col => col.Field === 'id');
+            if (!idColumn || !idColumn.Extra.includes('auto_increment')) {
+                console.log('⚠️ Modules table id column missing AUTO_INCREMENT, repairing...');
+                
+                // Drop and recreate the modules table with correct structure
+                await pool.query('DROP TABLE IF EXISTS modules');
+                await pool.query(`
+                    CREATE TABLE modules (
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        code VARCHAR(20) NOT NULL,
+                        name VARCHAR(100) NOT NULL,
+                        lecturer VARCHAR(100),
+                        semester INT NOT NULL DEFAULT 1,
+                        year INT NOT NULL DEFAULT 1,
+                        user_id INT DEFAULT 1,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                    )
+                `);
+                console.log('✅ Modules table recreated with AUTO_INCREMENT id');
+            }
         } catch (describeError) {
             console.log('⚠️ Modules table check failed, attempting to create it...');
             

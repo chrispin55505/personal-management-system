@@ -552,6 +552,85 @@ router.get('/marks', async (req, res) => {
     }
 });
 
+// CA Marks Progress endpoint
+router.get('/ca-marks-progress', async (req, res) => {
+    try {
+        const { pool } = require('../config/database-simple');
+        console.log('📊 Calculating CA marks progress...');
+        
+        // Calculate total marks per module
+        const [moduleMarks] = await pool.query(`
+            SELECT 
+                m.module_id,
+                m.module_name,
+                mo.code as module_code,
+                SUM(m.marks) as total_marks,
+                COUNT(*) as assessment_count
+            FROM marks m
+            LEFT JOIN modules mo ON m.module_id = mo.id
+            WHERE m.user_id = 1
+            GROUP BY m.module_id, m.module_name, mo.code
+            ORDER BY total_marks DESC
+        `);
+        
+        console.log(`✅ Found ${moduleMarks.length} modules with marks`);
+        
+        // Calculate overall progress
+        const MAX_CA_MARKS = 40;
+        let totalMarks = 0;
+        const moduleProgress = [];
+        
+        moduleMarks.forEach(module => {
+            const percentage = Math.min((module.total_marks / MAX_CA_MARKS) * 100, 100);
+            totalMarks += module.total_marks;
+            
+            moduleProgress.push({
+                moduleId: module.module_id,
+                moduleName: module.module_name,
+                moduleCode: module.module_code,
+                totalMarks: parseFloat(module.total_marks),
+                assessmentCount: module.assessment_count,
+                percentage: Math.round(percentage),
+                remainingMarks: Math.max(MAX_CA_MARKS - module.total_marks, 0)
+            });
+        });
+        
+        // Calculate overall percentage and status
+        const overallPercentage = Math.min((totalMarks / MAX_CA_MARKS) * 100, 100);
+        let status = 'failed';
+        let statusColor = '#dc3545';
+        
+        if (totalMarks >= 26 && totalMarks <= 40) {
+            status = 'excellent';
+            statusColor = '#28a745';
+        } else if (totalMarks >= 20 && totalMarks <= 25) {
+            status = 'good';
+            statusColor = '#ffc107';
+        }
+        
+        const progressData = {
+            totalMarks: parseFloat(totalMarks),
+            maxMarks: MAX_CA_MARKS,
+            percentage: Math.round(overallPercentage),
+            remainingMarks: Math.max(MAX_CA_MARKS - totalMarks, 0),
+            status: status,
+            statusColor: statusColor,
+            modules: moduleProgress
+        };
+        
+        console.log(`📈 CA Progress: ${totalMarks}/${MAX_CA_MARKS} (${Math.round(overallPercentage)}%) - Status: ${status}`);
+        
+        return sendApiResponse(res, true, progressData);
+    } catch (error) {
+        console.error('❌ CA marks progress error:', error);
+        console.error('❌ Error details:', {
+            message: error.message,
+            stack: error.stack
+        });
+        return sendApiResponse(res, false, null, error);
+    }
+});
+
 router.post('/marks', async (req, res) => {
     try {
         const { pool } = require('../config/database-simple');

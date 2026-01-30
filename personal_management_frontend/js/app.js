@@ -353,6 +353,9 @@ class PersonalManagementApp {
             // Load recent activities
             await this.loadRecentActivities();
             
+            // Load CA marks progress
+            await this.loadCAMarksProgress();
+            
             console.log('✅ Dashboard data loaded and updated successfully');
             
             // Force a visual update to ensure changes are visible
@@ -543,6 +546,96 @@ class PersonalManagementApp {
         }
     }
 
+    // CA Marks Progress methods
+    async loadCAMarksProgress() {
+        try {
+            console.log('🔄 Loading CA marks progress...');
+            const progressData = await this.apiCall('/ca-marks-progress');
+            console.log('📊 CA marks progress data:', progressData);
+            
+            this.updateCAMarksDisplay(progressData);
+            console.log('✅ CA marks progress updated successfully');
+        } catch (error) {
+            console.error('❌ Failed to load CA marks progress:', error);
+            this.updateCAMarksDisplay(null);
+        }
+    }
+
+    updateCAMarksDisplay(progressData) {
+        // Update overall progress circle
+        const progressBar = document.getElementById('caProgressBar');
+        const percentageText = document.getElementById('caPercentage');
+        const statusValue = document.getElementById('caStatusValue');
+        
+        if (!progressData || !progressData.totalMarks) {
+            // No data case
+            if (progressBar) {
+                progressBar.style.strokeDasharray = '0 314';
+            }
+            if (percentageText) {
+                percentageText.textContent = '0%';
+            }
+            if (statusValue) {
+                statusValue.textContent = 'No Data';
+                statusValue.className = 'status-value';
+            }
+            this.updateModuleProgressList([]);
+            return;
+        }
+        
+        // Calculate progress circle values
+        const circumference = 2 * Math.PI * 50; // radius = 50
+        const offset = circumference - (progressData.percentage / 100) * circumference;
+        
+        // Update progress circle
+        if (progressBar) {
+            progressBar.style.strokeDasharray = `${circumference} ${circumference}`;
+            progressBar.style.strokeDashoffset = offset;
+        }
+        
+        // Update percentage text
+        if (percentageText) {
+            percentageText.textContent = `${progressData.percentage}%`;
+        }
+        
+        // Update status
+        if (statusValue) {
+            statusValue.textContent = progressData.status;
+            statusValue.className = `status-value ${progressData.status}`;
+        }
+        
+        // Update module progress list
+        this.updateModuleProgressList(progressData.modules || []);
+    }
+
+    updateModuleProgressList(modules) {
+        const moduleList = document.getElementById('moduleProgressList');
+        if (!moduleList) return;
+        
+        if (!modules || modules.length === 0) {
+            moduleList.innerHTML = '<p style="text-align: center; color: #666;">No CA marks recorded yet</p>';
+            return;
+        }
+        
+        moduleList.innerHTML = '';
+        
+        modules.forEach(module => {
+            const moduleItem = document.createElement('div');
+            moduleItem.className = 'module-progress-item';
+            moduleItem.innerHTML = `
+                <div class="module-info">
+                    <div class="module-name">${module.moduleName} (${module.moduleCode})</div>
+                    <div class="module-marks">${module.totalMarks} marks from ${module.assessmentCount} assessments</div>
+                </div>
+                <div class="module-progress-bar">
+                    <div class="module-progress-fill" style="width: ${module.percentage}%"></div>
+                </div>
+                <div class="module-percentage">${module.percentage}%</div>
+            `;
+            moduleList.appendChild(moduleItem);
+        });
+    }
+
     // Timetable methods
     async loadTimetable() {
         try {
@@ -661,6 +754,7 @@ class PersonalManagementApp {
 
             document.getElementById('marksInput').value = '';
             await this.loadMarks();
+            await this.loadCAMarksProgress(); // Update CA marks progress
             this.showNotification('Marks Added', `Added ${marks} marks`);
         } catch (error) {
             console.error('Failed to add marks:', error);
@@ -724,6 +818,7 @@ class PersonalManagementApp {
             // Clear form and reload
             document.getElementById('marksInput').value = '';
             await this.loadMarks();
+            await this.loadCAMarksProgress(); // Update CA marks progress
             this.showNotification('Marks Updated', `Updated marks to ${marks}`);
         } catch (error) {
             console.error('Failed to update marks:', error);
@@ -736,6 +831,7 @@ class PersonalManagementApp {
             try {
                 await this.apiCall(`/marks/${id}`, { method: 'DELETE' });
                 await this.loadMarks();
+                await this.loadCAMarksProgress(); // Update CA marks progress
                 this.showNotification('Marks Deleted', 'Marks have been deleted successfully');
             } catch (error) {
                 console.error('Failed to delete marks:', error);

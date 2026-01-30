@@ -63,6 +63,7 @@ class PersonalManagementApp {
         document.getElementById('addSavingsBtn')?.addEventListener('click', () => this.addSavings());
         document.getElementById('addAppointmentBtn')?.addEventListener('click', () => this.addAppointment());
         document.getElementById('addJourneyBtn')?.addEventListener('click', () => this.addJourney());
+        document.getElementById('addMarksBtn')?.addEventListener('click', () => this.addMarks());
 
         // Event delegation for action buttons
         document.addEventListener('click', (e) => {
@@ -664,6 +665,82 @@ class PersonalManagementApp {
         } catch (error) {
             console.error('Failed to add marks:', error);
             alert(`Failed to add marks: ${error.message}`);
+        }
+    }
+
+    async editMarks(id) {
+        try {
+            const marks = await this.apiCall('/marks');
+            const mark = marks.find(m => m.id === id);
+            
+            if (!mark) {
+                alert('Marks not found');
+                return;
+            }
+            
+            // Populate form with existing data
+            document.getElementById('moduleSelect').value = mark.module_id;
+            document.getElementById('categorySelect').value = mark.category;
+            document.getElementById('marksInput').value = mark.marks;
+            
+            // Change button to update mode
+            const addBtn = document.getElementById('addMarksBtn');
+            addBtn.innerHTML = '<i class="fas fa-save"></i> Update Marks';
+            addBtn.onclick = () => this.updateMarks(id);
+            
+            // Scroll to form
+            document.getElementById('ca-marks').scrollIntoView({ behavior: 'smooth' });
+        } catch (error) {
+            console.error('Failed to edit marks:', error);
+            alert('Failed to load marks for editing');
+        }
+    }
+
+    async updateMarks(id) {
+        try {
+            const moduleId = document.getElementById('moduleSelect').value;
+            const category = document.getElementById('categorySelect').value;
+            const marks = document.getElementById('marksInput').value;
+
+            if (!moduleId || !marks) {
+                alert('Please select a module and enter marks');
+                return;
+            }
+
+            await this.apiCall(`/marks/${id}`, {
+                method: 'PUT',
+                body: JSON.stringify({
+                    moduleId,
+                    category,
+                    marks: parseFloat(marks)
+                })
+            });
+
+            // Reset button to add mode
+            const addBtn = document.getElementById('addMarksBtn');
+            addBtn.innerHTML = '<i class="fas fa-plus"></i> Add Marks';
+            addBtn.onclick = () => this.addMarks();
+
+            // Clear form and reload
+            document.getElementById('marksInput').value = '';
+            await this.loadMarks();
+            this.showNotification('Marks Updated', `Updated marks to ${marks}`);
+        } catch (error) {
+            console.error('Failed to update marks:', error);
+            alert(`Failed to update marks: ${error.message}`);
+        }
+    }
+
+    async deleteMarks(id) {
+        if (confirm('Are you sure you want to delete these marks?')) {
+            try {
+                await this.apiCall(`/marks/${id}`, { method: 'DELETE' });
+                await this.loadMarks();
+                this.showNotification('Marks Deleted', 'Marks have been deleted successfully');
+            } catch (error) {
+                console.error('Failed to delete marks:', error);
+                alert('Failed to delete marks. Please try again.');
+            }
         }
     }
 

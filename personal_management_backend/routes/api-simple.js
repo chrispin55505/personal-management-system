@@ -533,6 +533,153 @@ router.put('/modules/:id', async (req, res) => {
     }
 });
 
+// Marks routes
+router.get('/marks', async (req, res) => {
+    try {
+        const { pool } = require('../config/database-simple');
+        console.log('📊 Loading marks...');
+        const [rows] = await pool.query(`
+            SELECT m.*, mo.code as module_code 
+            FROM marks m 
+            LEFT JOIN modules mo ON m.module_id = mo.id 
+            ORDER BY m.marks_date DESC
+        `);
+        console.log(`✅ Loaded ${rows.length} marks`);
+        res.json(rows);
+    } catch (error) {
+        console.error('❌ Marks load error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+router.post('/marks', async (req, res) => {
+    try {
+        const { pool } = require('../config/database-simple');
+        const { moduleId, category, marks } = req.body;
+        
+        console.log('📊 Adding marks:', { moduleId, category, marks });
+        console.log('📝 Request body:', req.body);
+        
+        // Validate required fields
+        if (!moduleId || !marks) {
+            const validationError = new Error('Module and marks are required fields');
+            validationError.status = 400;
+            validationError.required = ['moduleId', 'marks'];
+            console.log('❌ Validation failed:', validationError.message);
+            throw validationError;
+        }
+        
+        // Get module details
+        const [moduleRows] = await pool.query('SELECT * FROM modules WHERE id = ?', [moduleId]);
+        if (moduleRows.length === 0) {
+            const validationError = new Error('Module not found');
+            validationError.status = 404;
+            throw validationError;
+        }
+        
+        const module = moduleRows[0];
+        
+        const [result] = await pool.query(
+            'INSERT INTO marks (module_id, module_name, lecturer, category, marks, marks_date, user_id) VALUES (?, ?, ?, ?, ?, CURDATE(), ?)',
+            [moduleId, module.name, module.lecturer || '', category || 'test01', parseFloat(marks), 1]
+        );
+        
+        console.log(`✅ Marks added with ID: ${result.insertId}`);
+        
+        // Log activity
+        await logActivity(pool, `Added marks: ${marks} for ${module.name} (${module.code})`, 'marks', 'added');
+        
+        return sendApiResponse(res, true, { 
+            id: result.insertId, 
+            message: 'Marks added successfully' 
+        });
+    } catch (error) {
+        console.error('❌ Marks insert error:', error);
+        console.error('❌ Error details:', {
+            message: error.message,
+            status: error.status,
+            stack: error.stack
+        });
+        return sendApiResponse(res, false, null, error);
+    }
+});
+
+router.delete('/marks/:id', async (req, res) => {
+    try {
+        const { pool } = require('../config/database-simple');
+        const id = req.params.id;
+        
+        console.log(`🗑️ Deleting marks ID: ${id}`);
+        
+        const [result] = await pool.query('DELETE FROM marks WHERE id = ?', [id]);
+        
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'Marks not found' });
+        }
+        
+        console.log(`✅ Marks ${id} deleted`);
+        
+        // Log activity
+        await logActivity(pool, `Deleted marks entry`, 'marks', 'deleted');
+        
+        res.json({ success: true, message: 'Marks deleted successfully' });
+    } catch (error) {
+        console.error('❌ Marks delete error:', error);
+        res.status(500).json({ 
+            error: 'Failed to delete marks',
+            details: error.message 
+        });
+    }
+});
+
+router.put('/marks/:id', async (req, res) => {
+    try {
+        const { pool } = require('../config/database-simple');
+        const id = req.params.id;
+        const { moduleId, category, marks } = req.body;
+        
+        console.log('📊 Updating marks:', { id, moduleId, category, marks });
+        
+        // Validate required fields
+        if (!moduleId || !marks) {
+            return res.status(400).json({ 
+                error: 'Missing required fields',
+                required: ['moduleId', 'marks']
+            });
+        }
+        
+        // Get module details
+        const [moduleRows] = await pool.query('SELECT * FROM modules WHERE id = ?', [moduleId]);
+        if (moduleRows.length === 0) {
+            return res.status(404).json({ error: 'Module not found' });
+        }
+        
+        const module = moduleRows[0];
+        
+        const [result] = await pool.query(
+            'UPDATE marks SET module_id = ?, module_name = ?, lecturer = ?, category = ?, marks = ? WHERE id = ?',
+            [moduleId, module.name, module.lecturer || '', category || 'test01', parseFloat(marks), id]
+        );
+        
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'Marks not found' });
+        }
+        
+        console.log(`✅ Marks ${id} updated`);
+        
+        // Log activity
+        await logActivity(pool, `Updated marks: ${marks} for ${module.name} (${module.code})`, 'marks', 'updated');
+        
+        res.json({ success: true, message: 'Marks updated successfully' });
+    } catch (error) {
+        console.error('❌ Marks update error:', error);
+        res.status(500).json({ 
+            error: 'Failed to update marks',
+            details: error.message 
+        });
+    }
+});
+
 router.post('/money', async (req, res) => {
     try {
         const { pool } = require('../config/database-simple');

@@ -1256,7 +1256,7 @@ class PersonalManagementApp {
         const time = document.getElementById('journeyTime').value;
         const transportCost = document.getElementById('transportCost').value;
         const foodCost = document.getElementById('foodCost').value;
-        const status = document.getElementById('journeyStatus').value;
+        const status = 'pending'; // Default status for new journeys
 
         if (!from || !to || !date) {
             alert('Please fill in from, to, and date fields');
@@ -1470,7 +1470,7 @@ class PersonalManagementApp {
         document.getElementById('journeyTime').value = '';
         document.getElementById('transportCost').value = '';
         document.getElementById('foodCost').value = '';
-        document.getElementById('journeyStatus').value = 'pending';
+        // No need to clear journeyStatus as it's removed from form
     }
 
     // Skills method
@@ -1630,7 +1630,7 @@ class PersonalManagementApp {
                 document.getElementById('journeyTime').value = journey.journey_time || '';
                 document.getElementById('transportCost').value = journey.transport_cost || '';
                 document.getElementById('foodCost').value = journey.food_cost || '';
-                document.getElementById('journeyStatus').value = journey.status || 'pending';
+                // Don't set journeyStatus as it's removed from form - status is managed in table
                 
                 // Change button to update mode
                 const addBtn = document.getElementById('addJourneyBtn');
@@ -1653,7 +1653,7 @@ class PersonalManagementApp {
         const time = document.getElementById('journeyTime').value;
         const transportCost = document.getElementById('transportCost').value;
         const foodCost = document.getElementById('foodCost').value;
-        const status = document.getElementById('journeyStatus').value;
+        // Status is not updated from form - it's managed in the table dropdown
 
         if (!from || !to || !date) {
             alert('Please fill in from, to, and date fields');

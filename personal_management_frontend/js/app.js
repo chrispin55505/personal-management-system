@@ -1124,6 +1124,7 @@ class PersonalManagementApp {
 
     async updateAppointmentStatus(id, newStatus) {
         try {
+            console.log(`🔄 Updating appointment ${id} status to: ${newStatus}`);
             await this.apiCall(`/appointments/${id}/status`, {
                 method: 'PUT',
                 body: JSON.stringify({ status: newStatus })

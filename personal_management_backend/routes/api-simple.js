@@ -582,23 +582,26 @@ router.get('/ca-marks-progress', async (req, res) => {
         
         // First, calculate the total marks from all modules
         moduleMarks.forEach(module => {
-            totalMarks += parseFloat(module.total_marks);
+            const marks = parseFloat(module.total_marks);
+            console.log(`🔢 Processing module marks: ${module.total_marks} -> ${marks}`);
+            totalMarks += marks;
         });
         
-        console.log(`📈 Total marks from all modules: ${totalMarks}`);
+        console.log(`📈 Total marks from all modules: ${totalMarks} (type: ${typeof totalMarks})`);
         
         // Then calculate module progress (for display purposes)
         moduleMarks.forEach(module => {
-            const percentage = Math.min((module.total_marks / MAX_CA_MARKS) * 100, 100);
+            const moduleMarksValue = parseFloat(module.total_marks);
+            const percentage = Math.min((moduleMarksValue / MAX_CA_MARKS) * 100, 100);
             
             moduleProgress.push({
                 moduleId: module.module_id,
                 moduleName: module.module_name,
                 moduleCode: module.module_code,
-                totalMarks: parseFloat(module.total_marks),
+                totalMarks: moduleMarksValue,
                 assessmentCount: module.assessment_count,
                 percentage: Math.round(percentage),
-                remainingMarks: Math.max(MAX_CA_MARKS - module.total_marks, 0)
+                remainingMarks: Math.max(MAX_CA_MARKS - moduleMarksValue, 0)
             });
         });
         

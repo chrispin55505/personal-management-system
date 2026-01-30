@@ -284,10 +284,16 @@ class PersonalManagementApp {
                 let errorMessage = 'Failed to add data. Please try again.';
                 
                 if (data.error) {
-                    // Use the actual error message from backend
-                    errorMessage = data.error;
-                    if (data.details) {
-                        errorMessage += `\n\nDetails: ${data.details}`;
+                    // Extract error from nested error object
+                    if (data.error.message) {
+                        errorMessage = data.error.message;
+                    } else if (data.error.original) {
+                        errorMessage = data.error.original;
+                    }
+                    
+                    // Add suggestion if available
+                    if (data.error.suggestion) {
+                        errorMessage += `\n\nSuggestion: ${data.error.suggestion}`;
                     }
                 } else if (data.message) {
                     errorMessage = data.message;
@@ -863,7 +869,16 @@ class PersonalManagementApp {
             this.showNotification('Module Added', `Added ${moduleCode} to your modules`);
         } catch (error) {
             console.error('Failed to add module:', error);
-            alert(`Failed to add module: ${error.message}`);
+            
+            // Extract proper error message
+            let errorMessage = 'Failed to add module';
+            if (error.message) {
+                errorMessage = error.message;
+            } else if (typeof error === 'object') {
+                errorMessage = JSON.stringify(error);
+            }
+            
+            alert(errorMessage);
         }
     }
 

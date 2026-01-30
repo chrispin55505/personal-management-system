@@ -408,15 +408,18 @@ router.post('/modules', async (req, res) => {
         const { code, name, lecturer, semester, year } = req.body;
         
         console.log('📚 Adding module:', { code, name, lecturer, semester, year });
+        console.log('📝 Request body:', req.body);
         
         // Validate required fields
         if (!code || !name) {
-            const validationError = new Error('Missing required fields');
+            const validationError = new Error('Module code and name are required fields');
             validationError.status = 400;
             validationError.required = ['code', 'name'];
+            console.log('❌ Validation failed:', validationError.message);
             throw validationError;
         }
         
+        console.log('🔍 Executing INSERT query...');
         const [result] = await pool.query(
             'INSERT INTO modules (code, name, lecturer, semester, year, user_id) VALUES (?, ?, ?, ?, ?, ?)',
             [code, name, lecturer || '', semester || 1, year || 1, 1]
@@ -433,6 +436,11 @@ router.post('/modules', async (req, res) => {
         });
     } catch (error) {
         console.error('❌ Module insert error:', error);
+        console.error('❌ Error details:', {
+            message: error.message,
+            status: error.status,
+            stack: error.stack
+        });
         return sendApiResponse(res, false, null, error);
     }
 });

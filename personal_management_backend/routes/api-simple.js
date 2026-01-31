@@ -1434,4 +1434,139 @@ router.delete('/activities', async (req, res) => {
     }
 });
 
+// 🎓 School Fees Management
+router.get('/school-fees', async (req, res) => {
+    try {
+        const { pool } = require('../config/database-simple');
+        const [fees] = await pool.query('SELECT * FROM school_fees ORDER BY year, semester');
+        return sendApiResponse(res, true, fees);
+    } catch (error) {
+        console.error('❌ School fees fetch error:', error);
+        return sendApiResponse(res, false, null, error);
+    }
+});
+
+router.post('/school-fees', async (req, res) => {
+    try {
+        const { pool } = require('../config/database-simple');
+        const { year, semester, amount, payment_date, payment_method } = req.body;
+        
+        console.log('🎓 Adding school fee payment:', { year, semester, amount, payment_date, payment_method });
+        
+        // Validate required fields
+        if (!year || !semester || !amount || !payment_date) {
+            const validationError = new Error('Year, semester, amount, and payment date are required');
+            validationError.status = 400;
+            throw validationError;
+        }
+        
+        // Validate amount (max 500,000 per semester)
+        const parsedAmount = parseFloat(amount);
+        if (parsedAmount <= 0 || parsedAmount > 500000) {
+            const validationError = new Error('Amount must be between 0 and 500,000 TZS');
+            validationError.status = 400;
+            throw validationError;
+        }
+        
+        const [result] = await pool.query(
+            'INSERT INTO school_fees (year, semester, amount, payment_date, payment_method, user_id) VALUES (?, ?, ?, ?, ?, ?)',
+            [year, semester, parsedAmount, payment_date, payment_method || 'cash', 1]
+        );
+        
+        console.log(`✅ School fee payment added with ID: ${result.insertId}`);
+        
+        // Log activity
+        await logActivity(pool, `Added school fee payment: Year ${year} ${semester} - ${parsedAmount.toLocaleString()} TZS`, 'school-fees', 'added');
+        
+        return sendApiResponse(res, true, { 
+            id: result.insertId, 
+            message: 'School fee payment added successfully' 
+        });
+    } catch (error) {
+        console.error('❌ School fee payment error:', error);
+        return sendApiResponse(res, false, null, error);
+    }
+});
+
+router.put('/school-fees/:id', async (req, res) => {
+    try {
+        const { pool } = require('../config/database-simple');
+        const id = req.params.id;
+        const { year, semester, amount, payment_date, payment_method } = req.body;
+        
+        console.log('🎓 Updating school fee payment:', { id, year, semester, amount, payment_date, payment_method });
+        
+        // Validate required fields
+        if (!year || !semester || !amount || !payment_date) {
+            const validationError = new Error('Year, semester, amount, and payment date are required');
+            validationError.status = 400;
+            throw validationError;
+        }
+        
+        // Validate amount (max 500,000 per semester)
+        const parsedAmount = parseFloat(amount);
+        if (parsedAmount <= 0 || parsedAmount > 500000) {
+            const validationError = new Error('Amount must be between 0 and 500,000 TZS');
+            validationError.status = 400;
+            throw validationError;
+        }
+        
+        const [result] = await pool.query(
+            'UPDATE school_fees SET year = ?, semester = ?, amount = ?, payment_date = ?, payment_method = ? WHERE id = ?',
+            [year, semester, parsedAmount, payment_date, payment_method || 'cash', id]
+        );
+        
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'School fee payment not found' });
+        }
+        
+        console.log(`✅ School fee payment ${id} updated successfully`);
+        
+        // Log activity
+        await logActivity(pool, `Updated school fee payment: Year ${year} ${semester} - ${parsedAmount.toLocaleString()} TZS`, 'school-fees', 'updated');
+        
+        return sendApiResponse(res, true, { 
+            message: 'School fee payment updated successfully' 
+        });
+    } catch (error) {
+        console.error('❌ School fee update error:', error);
+        return sendApiResponse(res, false, null, error);
+    }
+});
+
+router.delete('/school-fees/:id', async (req, res) => {
+    try {
+        const { pool } = require('../config/database-simple');
+        const id = req.params.id;
+        
+        console.log('🎓 Deleting school fee payment:', { id });
+        
+        // Get the payment details before deletion for logging
+        const [payment] = await pool.query('SELECT * FROM school_fees WHERE id = ?', [id]);
+        
+        if (payment.length === 0) {
+            return res.status(404).json({ error: 'School fee payment not found' });
+        }
+        
+        const [result] = await pool.query('DELETE FROM school_fees WHERE id = ?', [id]);
+        
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'School fee payment not found' });
+        }
+        
+        console.log(`✅ School fee payment ${id} deleted successfully`);
+        
+        // Log activity
+        const paymentData = payment[0];
+        await logActivity(pool, `Deleted school fee payment: Year ${paymentData.year} ${paymentData.semester} - ${parseFloat(paymentData.amount).toLocaleString()} TZS`, 'school-fees', 'deleted');
+        
+        return sendApiResponse(res, true, { 
+            message: 'School fee payment deleted successfully' 
+        });
+    } catch (error) {
+        console.error('❌ School fee delete error:', error);
+        return sendApiResponse(res, false, null, error);
+    }
+});
+
 module.exports = router;

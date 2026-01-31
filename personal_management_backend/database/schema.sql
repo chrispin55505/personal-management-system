@@ -127,6 +127,21 @@ CREATE TABLE IF NOT EXISTS activities (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+-- School Fees table
+CREATE TABLE IF NOT EXISTS school_fees (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    year INT NOT NULL,
+    semester ENUM('semester1', 'semester2') NOT NULL,
+    amount DECIMAL(10,2) NOT NULL,
+    payment_date DATE NOT NULL,
+    payment_method VARCHAR(50) DEFAULT 'cash',
+    status ENUM('pending', 'completed', 'partial') DEFAULT 'completed',
+    user_id INT DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
 -- Insert default admin user (password: @nzali2006)
 INSERT IGNORE INTO users (id, username, password, email) VALUES (1, 'chrispin', '@nzali2006', 'chrispingolden@gmail.com');
 INSERT IGNORE INTO users (id, username, password) VALUES (2, 'user', 'user123');

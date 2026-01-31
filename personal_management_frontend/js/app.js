@@ -62,6 +62,8 @@ class PersonalManagementApp {
         document.getElementById('addMoneyBtn')?.addEventListener('click', () => this.addMoneyRecord());
         document.getElementById('addSavingsBtn')?.addEventListener('click', () => this.addSavings());
         document.getElementById('addAppointmentBtn')?.addEventListener('click', () => this.addAppointment());
+        document.getElementById('addSchoolFeesBtn')?.addEventListener('click', () => this.addSchoolFees());
+        document.getElementById('cancelSchoolFeesBtn')?.addEventListener('click', () => this.cancelSchoolFeesEdit());
         document.getElementById('addJourneyBtn')?.addEventListener('click', () => this.addJourney());
         document.getElementById('addMarksBtn')?.addEventListener('click', () => this.addMarks());
         document.getElementById('clearActivitiesBtn')?.addEventListener('click', () => this.clearRecentActivities());
@@ -160,7 +162,7 @@ class PersonalManagementApp {
                 const data = await response.json();
                 this.currentUser = data.user;
                 this.showDashboard();
-                this.showNotification('Login Successful', `Welcome back, ${username}!`);
+                this.showNotification('✅', 'Welcome back!');
             } else {
                 const error = await response.json();
                 alert(error.message || 'Login failed. Try admin/admin123');
@@ -230,6 +232,10 @@ class PersonalManagementApp {
             case 'appointments':
                 await this.loadAppointments();
                 break;
+            case 'school-fees':
+                await this.loadSchoolFees();
+                await this.loadSchoolFeesProgress();
+                break;
             case 'skills':
                 this.loadSkillsData();
                 break;
@@ -253,15 +259,24 @@ class PersonalManagementApp {
     }
 
     showNotification(title, message) {
-        this.notificationTitle.textContent = title;
-        this.notificationMessage.textContent = message;
-        this.notification.style.display = 'flex';
-
-        setTimeout(() => {
-            this.notification.style.display = 'none';
-        }, 5000);
+        // Check if mobile device (480px or less)
+        const isMobile = window.innerWidth <= 480;
+        
+        if (isMobile) {
+            // On mobile, don't show any notification at all
+            return;
+        } else {
+            // On desktop, show full notification
+            this.notificationTitle.textContent = title;
+            this.notificationMessage.textContent = message;
+            this.notification.style.display = 'flex';
+            
+            setTimeout(() => {
+                this.notification.style.display = 'none';
+            }, 5000);
+        }
     }
-
+    
     async apiCall(endpoint, options = {}) {
         try {
             const url = `${this.apiBase}${endpoint}`;
@@ -356,6 +371,9 @@ class PersonalManagementApp {
             
             // Load CA marks progress
             await this.loadCAMarksProgress();
+            
+            // Load school fees progress
+            await this.loadSchoolFeesProgress();
             
             console.log('✅ Dashboard data loaded and updated successfully');
             
@@ -1709,6 +1727,282 @@ class PersonalManagementApp {
                 console.error('Failed to delete journey:', error);
                 alert('Failed to delete journey. Please try again.');
             }
+        }
+    }
+
+    // School Fees methods
+    async loadSchoolFees() {
+        try {
+            console.log('🔄 Loading school fees...');
+            const fees = await this.apiCall('/school-fees');
+            console.log('🎓 School fees loaded:', fees);
+            
+            const tbody = document.getElementById('schoolFeesBody');
+            if (!tbody) {
+                console.error('❌ schoolFeesBody tbody not found');
+                return;
+            }
+            
+            tbody.innerHTML = '';
+
+            if (!fees || fees.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = `<td colspan="7" style="text-align: center; color: #666;">No school fee payments recorded</td>`;
+                tbody.appendChild(row);
+                return;
+            }
+
+            fees.forEach(fee => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>Year ${fee.year}</td>
+                    <td>${fee.semester === 'semester1' ? 'Semester 1' : 'Semester 2'}</td>
+                    <td>${parseFloat(fee.amount).toLocaleString()} TZS</td>
+                    <td>${this.formatDate(fee.payment_date)}</td>
+                    <td>${fee.payment_method || 'Cash'}</td>
+                    <td><span class="status-badge status-${fee.status}">${fee.status}</span></td>
+                    <td>
+                        <button class="action-btn edit-btn" onclick="app.editSchoolFees(${fee.id})"><i class="fas fa-edit"></i></button>
+                        <button class="action-btn delete-btn" onclick="app.deleteSchoolFees(${fee.id})"><i class="fas fa-trash"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+            
+            console.log(`✅ Displayed ${fees.length} school fee payments`);
+        } catch (error) {
+            console.error('❌ Failed to load school fees:', error);
+            const tbody = document.getElementById('schoolFeesBody');
+            if (tbody) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: red;">Failed to load school fees</td></tr>`;
+            }
+        }
+    }
+
+    async loadSchoolFeesProgress() {
+        try {
+            console.log('🔄 Loading school fees progress...');
+            const progressData = await this.apiCall('/school-fees-progress');
+            console.log('📊 School fees progress data:', progressData);
+            
+            this.updateSchoolFeesDisplay(progressData);
+            console.log('✅ School fees progress updated successfully');
+        } catch (error) {
+            console.error('❌ Failed to load school fees progress:', error);
+            this.updateSchoolFeesDisplay(null);
+        }
+    }
+
+    updateSchoolFeesDisplay(progressData) {
+        // Update dashboard progress
+        const progressElement = document.getElementById('schoolFeesProgress');
+        if (progressElement) {
+            const percentage = progressData ? progressData.percentage : 0;
+            progressElement.textContent = `${percentage}%`;
+        }
+
+        // Update school fees section
+        const totalPaidElement = document.getElementById('totalPaid');
+        const paymentStatusElement = document.getElementById('paymentStatus');
+        const yearsCompletedElement = document.getElementById('yearsCompleted');
+        const yearStatusElement = document.getElementById('yearStatus');
+
+        if (progressData && totalPaidElement) {
+            totalPaidElement.textContent = `${parseFloat(progressData.totalPaid).toLocaleString()} TZS`;
+            
+            if (paymentStatusElement) {
+                if (progressData.percentage === 100) {
+                    paymentStatusElement.textContent = 'All fees paid! 🎉';
+                } else if (progressData.percentage > 0) {
+                    paymentStatusElement.textContent = `${progressData.percentage}% of total fees paid`;
+                } else {
+                    paymentStatusElement.textContent = 'No payments yet';
+                }
+            }
+
+            if (yearsCompletedElement) {
+                yearsCompletedElement.textContent = `${progressData.completedYears} / ${progressData.totalYears}`;
+            }
+
+            if (yearStatusElement) {
+                if (progressData.completedYears === 3) {
+                    yearStatusElement.textContent = 'All years completed! 🎓';
+                } else if (progressData.completedYears > 0) {
+                    yearStatusElement.textContent = `Continue with Year ${progressData.completedYears + 1}`;
+                } else {
+                    yearStatusElement.textContent = 'Start with Year 1';
+                }
+            }
+        } else {
+            // Reset to default values
+            if (totalPaidElement) totalPaidElement.textContent = '0 TZS';
+            if (paymentStatusElement) paymentStatusElement.textContent = 'No payments yet';
+            if (yearsCompletedElement) yearsCompletedElement.textContent = '0 / 3';
+            if (yearStatusElement) yearStatusElement.textContent = 'Start with Year 1';
+        }
+    }
+
+    async addSchoolFees() {
+        const year = document.getElementById('feesYear').value;
+        const semester = document.getElementById('feesSemester').value;
+        const amount = document.getElementById('feesAmount').value;
+        const date = document.getElementById('feesDate').value;
+        const method = document.getElementById('feesMethod').value;
+
+        if (!year || !semester || !amount || !date) {
+            alert('Please fill in all required fields');
+            return;
+        }
+
+        const parsedAmount = parseFloat(amount);
+        if (parsedAmount <= 0 || parsedAmount > 500000) {
+            alert('Amount must be between 0 and 500,000 TZS');
+            return;
+        }
+
+        try {
+            await this.apiCall('/school-fees', {
+                method: 'POST',
+                body: JSON.stringify({
+                    year: parseInt(year),
+                    semester,
+                    amount: parsedAmount,
+                    payment_date: date,
+                    payment_method: method
+                })
+            });
+
+            this.clearSchoolFeesForm();
+            await this.loadSchoolFees();
+            await this.loadSchoolFeesProgress();
+            await this.loadDashboardData();
+            this.showNotification('School Fees Added', `Added ${parsedAmount.toLocaleString()} TZS for Year ${year} ${semester}`);
+        } catch (error) {
+            console.error('Failed to add school fees:', error);
+            alert(`Failed to add school fees: ${error.message}`);
+        }
+    }
+
+    clearSchoolFeesForm() {
+        document.getElementById('feesYear').value = '';
+        document.getElementById('feesSemester').value = '';
+        document.getElementById('feesAmount').value = '';
+        document.getElementById('feesDate').value = '';
+        document.getElementById('feesMethod').value = 'cash';
+    }
+
+    cancelSchoolFeesEdit() {
+        // Reset button to add mode
+        const addBtn = document.getElementById('addSchoolFeesBtn');
+        addBtn.innerHTML = '<i class="fas fa-plus"></i> Add Payment';
+        addBtn.onclick = () => this.addSchoolFees();
+
+        // Hide cancel button
+        document.getElementById('cancelSchoolFeesBtn').style.display = 'none';
+
+        // Clear form
+        this.clearSchoolFeesForm();
+
+        this.showNotification('Edit Cancelled', 'School fees edit has been cancelled');
+    }
+
+    async deleteSchoolFees(id) {
+        if (confirm('Are you sure you want to delete this school fee payment?')) {
+            try {
+                await this.apiCall(`/school-fees/${id}`, { method: 'DELETE' });
+                await this.loadSchoolFees();
+                await this.loadSchoolFeesProgress();
+                await this.loadDashboardData();
+                this.showNotification('School Fees Deleted', 'School fee payment has been deleted successfully');
+            } catch (error) {
+                console.error('Failed to delete school fees:', error);
+                alert('Failed to delete school fees. Please try again.');
+            }
+        }
+    }
+
+    async editSchoolFees(id) {
+        try {
+            console.log('🔄 Loading school fee for editing:', { id });
+            const fees = await this.apiCall('/school-fees');
+            const fee = fees.find(f => f.id === id);
+            
+            if (!fee) {
+                alert('School fee payment not found');
+                return;
+            }
+
+            // Populate form with existing data
+            document.getElementById('feesYear').value = fee.year;
+            document.getElementById('feesSemester').value = fee.semester;
+            document.getElementById('feesAmount').value = fee.amount;
+            document.getElementById('feesDate').value = fee.payment_date;
+            document.getElementById('feesMethod').value = fee.payment_method || 'cash';
+
+            // Change button to update mode
+            const addBtn = document.getElementById('addSchoolFeesBtn');
+            addBtn.innerHTML = '<i class="fas fa-save"></i> Update Payment';
+            addBtn.onclick = () => this.updateSchoolFees(id);
+
+            // Show cancel button
+            document.getElementById('cancelSchoolFeesBtn').style.display = 'block';
+
+            // Scroll to form
+            document.getElementById('school-fees').scrollIntoView({ behavior: 'smooth' });
+            
+            this.showNotification('Edit Mode', 'Modify the payment details and click "Update Payment" to save changes');
+        } catch (error) {
+            console.error('Failed to edit school fees:', error);
+            alert('Failed to load school fee for editing. Please try again.');
+        }
+    }
+
+    async updateSchoolFees(id) {
+        const year = document.getElementById('feesYear').value;
+        const semester = document.getElementById('feesSemester').value;
+        const amount = document.getElementById('feesAmount').value;
+        const date = document.getElementById('feesDate').value;
+        const method = document.getElementById('feesMethod').value;
+
+        if (!year || !semester || !amount || !date) {
+            alert('Please fill in all required fields');
+            return;
+        }
+
+        const parsedAmount = parseFloat(amount);
+        if (parsedAmount <= 0 || parsedAmount > 500000) {
+            alert('Amount must be between 0 and 500,000 TZS');
+            return;
+        }
+
+        try {
+            await this.apiCall(`/school-fees/${id}`, {
+                method: 'PUT',
+                body: JSON.stringify({
+                    year: parseInt(year),
+                    semester,
+                    amount: parsedAmount,
+                    payment_date: date,
+                    payment_method: method
+                })
+            });
+
+            // Reset button to add mode
+            const addBtn = document.getElementById('addSchoolFeesBtn');
+            addBtn.innerHTML = '<i class="fas fa-plus"></i> Add Payment';
+            addBtn.onclick = () => this.addSchoolFees();
+
+            // Hide cancel button
+            document.getElementById('cancelSchoolFeesBtn').style.display = 'none';
+
+            this.clearSchoolFeesForm();
+            await this.loadSchoolFees();
+            await this.loadSchoolFeesProgress();
+            await this.loadDashboardData();
+            this.showNotification('School Fees Updated', `Updated payment: Year ${year} ${semester} - ${parsedAmount.toLocaleString()} TZS`);
+        } catch (error) {
+            console.error('Failed to update school fees:', error);
+            alert(`Failed to update school fees: ${error.message}`);
         }
     }
 }

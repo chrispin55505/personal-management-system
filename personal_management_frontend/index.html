@@ -81,6 +81,7 @@
                     <li><a href="#" data-section="money-circle"><i class="fas fa-money-bill-wave"></i> Money Circle</a></li>
                     <li><a href="#" data-section="modules"><i class="fas fa-book"></i> Modules</a></li>
                     <li><a href="#" data-section="appointments"><i class="fas fa-clock"></i> Appointments</a></li>
+                    <li><a href="#" data-section="school-fees"><i class="fas fa-graduation-cap"></i> School Fees</a></li>
                     <li><a href="#" data-section="skills"><i class="fas fa-code"></i> Skills Record</a></li>
                     <li><a href="#" data-section="journeys"><i class="fas fa-route"></i> Journey Tracker</a></li>
                 </ul>
@@ -94,12 +95,65 @@
                     </div>
                     
                     <div class="stats-cards">
+                        <!-- Mobile Single Rectangle Dashboard -->
+                        <div class="dashboard-rectangle">
+                            <div class="dashboard-title">Dashboard Overview</div>
+                            <div class="dashboard-items">
+                                <div class="dashboard-item">
+                                    <div class="dashboard-item-left">
+                                        <div class="dashboard-item-icon">
+                                            <i class="fas fa-calendar-check"></i>
+                                        </div>
+                                        <div class="dashboard-item-label">Appointments</div>
+                                    </div>
+                                    <div class="dashboard-item-value highlight" id="appointmentCount">0</div>
+                                </div>
+                                <div class="dashboard-item">
+                                    <div class="dashboard-item-left">
+                                        <div class="dashboard-item-icon">
+                                            <i class="fas fa-hand-holding-usd"></i>
+                                        </div>
+                                        <div class="dashboard-item-label">TZS Owed</div>
+                                    </div>
+                                    <div class="dashboard-item-value success" id="moneyOwed">0</div>
+                                </div>
+                                <div class="dashboard-item">
+                                    <div class="dashboard-item-left">
+                                        <div class="dashboard-item-icon">
+                                            <i class="fas fa-book"></i>
+                                        </div>
+                                        <div class="dashboard-item-label">Modules</div>
+                                    </div>
+                                    <div class="dashboard-item-value info" id="moduleCount">0</div>
+                                </div>
+                                <div class="dashboard-item">
+                                    <div class="dashboard-item-left">
+                                        <div class="dashboard-item-icon">
+                                            <i class="fas fa-graduation-cap"></i>
+                                        </div>
+                                        <div class="dashboard-item-label">Fees Progress</div>
+                                    </div>
+                                    <div class="dashboard-item-value warning" id="schoolFeesProgress">0%</div>
+                                </div>
+                                <div class="dashboard-item">
+                                    <div class="dashboard-item-left">
+                                        <div class="dashboard-item-icon">
+                                            <i class="fas fa-road"></i>
+                                        </div>
+                                        <div class="dashboard-item-label">Journeys</div>
+                                    </div>
+                                    <div class="dashboard-item-value" id="journeyCount">0</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Desktop Individual Stat Cards (Hidden on Mobile) -->
                         <div class="stat-card">
                             <div class="stat-icon">
                                 <i class="fas fa-calendar-check"></i>
                             </div>
                             <div class="stat-info">
-                                <h3 id="appointmentCount">0</h3>
+                                <h3 id="appointmentCountDesktop">0</h3>
                                 <p>Upcoming Appointments</p>
                             </div>
                         </div>
@@ -108,7 +162,7 @@
                                 <i class="fas fa-hand-holding-usd"></i>
                             </div>
                             <div class="stat-info">
-                                <h3 id="moneyOwed">0</h3>
+                                <h3 id="moneyOwedDesktop">0</h3>
                                 <p>TZS Owed to You</p>
                             </div>
                         </div>
@@ -117,8 +171,17 @@
                                 <i class="fas fa-book"></i>
                             </div>
                             <div class="stat-info">
-                                <h3 id="moduleCount">0</h3>
+                                <h3 id="moduleCountDesktop">0</h3>
                                 <p>Registered Modules</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-graduation-cap"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="schoolFeesProgressDesktop">0%</h3>
+                                <p>School Fees Progress</p>
                             </div>
                         </div>
                         <div class="stat-card">
@@ -126,7 +189,7 @@
                                 <i class="fas fa-road"></i>
                             </div>
                             <div class="stat-info">
-                                <h3 id="journeyCount">0</h3>
+                                <h3 id="journeyCountDesktop">0</h3>
                                 <p>Upcoming Journeys</p>
                             </div>
                         </div>
@@ -476,6 +539,92 @@
                             </thead>
                             <tbody id="appointmentsBody">
                                 <!-- Appointments data will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- School Fees Section -->
+                <div class="section" id="school-fees">
+                    <div class="section-header">
+                        <h2 class="section-title">School Fees Management</h2>
+                        <div class="header-buttons">
+                            <button class="add-btn" id="addSchoolFeesBtn"><i class="fas fa-plus"></i> Add Payment</button>
+                            <button class="cancel-btn" id="cancelSchoolFeesBtn" style="display: none;"><i class="fas fa-times"></i> Cancel</button>
+                        </div>
+                    </div>
+                    
+                    <div class="school-fees-overview">
+                        <div class="fees-summary">
+                            <div class="summary-card">
+                                <h4>Total Required (3 Years)</h4>
+                                <h3>3,000,000 TZS</h3>
+                                <p>1,000,000 TZS per year</p>
+                            </div>
+                            <div class="summary-card">
+                                <h4>Total Paid</h4>
+                                <h3 id="totalPaid">0 TZS</h3>
+                                <p id="paymentStatus">No payments yet</p>
+                            </div>
+                            <div class="summary-card">
+                                <h4>Years Completed</h4>
+                                <h3 id="yearsCompleted">0 / 3</h3>
+                                <p id="yearStatus">Start with Year 1</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="feesYear">Academic Year</label>
+                            <select id="feesYear" class="form-control">
+                                <option value="">Select Year</option>
+                                <option value="1">Year 1</option>
+                                <option value="2">Year 2</option>
+                                <option value="3">Year 3</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="feesSemester">Semester</label>
+                            <select id="feesSemester" class="form-control">
+                                <option value="">Select Semester</option>
+                                <option value="semester1">Semester 1</option>
+                                <option value="semester2">Semester 2</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="feesAmount">Amount (TZS)</label>
+                            <input type="number" id="feesAmount" class="form-control" placeholder="Enter amount" min="0" max="500000">
+                        </div>
+                        <div class="form-group">
+                            <label for="feesDate">Payment Date</label>
+                            <input type="date" id="feesDate" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="feesMethod">Payment Method</label>
+                            <select id="feesMethod" class="form-control">
+                                <option value="cash">Cash</option>
+                                <option value="bank">Bank Transfer</option>
+                                <option value="mobile">Mobile Money</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Year</th>
+                                    <th>Semester</th>
+                                    <th>Amount</th>
+                                    <th>Payment Date</th>
+                                    <th>Method</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="schoolFeesBody">
+                                <!-- School fees data will be populated here -->
                             </tbody>
                         </table>
                     </div>
